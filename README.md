@@ -9,9 +9,9 @@ filesystem templating in go
 
 The following naming conventions are used for files
 
-* *Caster metadata : *\*.caster
-* *Template* : \*.mold.\*
-* *Regular files*: \*.\*
+* **Caster metadata** : \*.caster
+* **Template** : \*.mold.\*
+* **Regular files**: \*.\*
 
 ### names
 
