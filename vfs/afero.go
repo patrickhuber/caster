@@ -3,14 +3,17 @@ package vfs
 import (
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/afero"
 )
 
 type aferoFs struct {
+	*fileSystem
 	fs afero.Fs
 }
 
+// NewAfero creates a FileSystem implemented with afero.Fs
 func NewAfero(fs afero.Fs) FileSystem {
 	return &aferoFs{
 		fs: fs,
@@ -30,7 +33,7 @@ func (fs *aferoFs) Write(path string, data []byte, permissions os.FileMode) erro
 }
 
 func (fs *aferoFs) Exists(path string) (bool, error) {
-	return false, nil
+	return afero.Exists(fs.fs, path)
 }
 
 func (fs *aferoFs) IsDir(path string) (bool, error) {
@@ -67,4 +70,8 @@ func (fs *aferoFs) Read(filename string) ([]byte, error) {
 
 func (fs *aferoFs) ReadDir(dirname string) ([]os.FileInfo, error) {
 	return afero.ReadDir(fs.fs, dirname)
+}
+
+func (fs *aferoFs) Walk(root string, walkFn filepath.WalkFunc) error {
+	return afero.Walk(fs.fs, root, walkFn)
 }
