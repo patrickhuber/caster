@@ -74,6 +74,16 @@ Valid go templates can be used in file and flder names.
 
 Each line produced by the file or folder template will generate a file. When using ranges, you can specify a backtick ``n` character to force a newline and generate a new file. If you do not specify a newline the entire range of values will be used in the name of a single item. 
 
+You can also use html escape characters to encode quotes and other characters. This is helpful when you need a special character in the file or folder template but that character is not allowed by posix or windows. 
+
+| character | escape   | 
+| --------- | -------- |
+| `&`       | `&amp;`  |
+| `<`       | `&lt;`   |
+| `>`       | `&gt;`   |
+| `"`       | `&quot;` |
+| `'`       | `&apos;` |
+
 given data file:
 
 ```yaml
