@@ -73,5 +73,14 @@ func (fs *aferoFs) ReadDir(dirname string) ([]os.FileInfo, error) {
 }
 
 func (fs *aferoFs) Walk(root string, walkFn filepath.WalkFunc) error {
-	return afero.Walk(fs.fs, root, walkFn)
+	return afero.Walk(
+		fs.fs,
+		root,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			path = fs.ToSlash(path)
+			return walkFn(path, info, err)
+		})
 }

@@ -24,6 +24,9 @@ type FileSystem interface {
 	ReadDir(dirname string) ([]os.FileInfo, error)
 	Walk(root string, walkFn filepath.WalkFunc) error
 	Join(segments ...string) string
+	Rel(basepath, targetpath string) (string, error)
+	Dir(path string) string
+	Clean(path string) string
 }
 
 // fileSystem provides default implementaions for functions that are cross provider
@@ -43,4 +46,20 @@ func (fs *fileSystem) Join(segments ...string) string {
 // ToSlash replaces all backslashes with forward slashes
 func (fs *fileSystem) ToSlash(path string) string {
 	return strings.Replace(path, "\\", "/", -1)
+}
+
+func (fs *fileSystem) Rel(basepath, targetpath string) (string, error) {
+	rel, err := filepath.Rel(basepath, targetpath)
+	if err != nil {
+		return "", err
+	}
+	return fs.ToSlash(rel), nil
+}
+
+func (fs *fileSystem) Dir(path string) string {
+	return fs.ToSlash(filepath.Dir(path))
+}
+
+func (fs *fileSystem) Clean(path string) string {
+	return fs.ToSlash(filepath.Clean(path))
 }
