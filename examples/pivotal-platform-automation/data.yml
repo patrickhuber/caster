@@ -1,4 +1,4 @@
-iaas: ((iaas))
+iaas: aws
 regions:
 - name: eastus
   environments: 
