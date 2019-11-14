@@ -1,0 +1,12 @@
+iaas: ((iaas))
+regions:
+- name: eastus
+  environments: 
+  - name: sdbx
+  - name: nonprod
+  - name: prod
+- name: westus
+  environments:
+  - name: sdbx
+  - name: nonprod
+  - name: prod

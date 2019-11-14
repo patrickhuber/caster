@@ -1,0 +1,3 @@
+files:
+- name: hello.txt
+  content: "hello world"

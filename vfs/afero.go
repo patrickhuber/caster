@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/spf13/afero"
 )
@@ -83,4 +84,25 @@ func (fs *aferoFs) Walk(root string, walkFn filepath.WalkFunc) error {
 			path = fs.ToSlash(path)
 			return walkFn(path, info, err)
 		})
+}
+
+func (fs *aferoFs) ReadDirRegex(dirname string, filter string) ([]os.FileInfo, error) {
+	regex, err := regexp.Compile(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := fs.ReadDir(dirname)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]os.FileInfo, 0)
+	for _, file := range files {
+		if regex.MatchString(file.Name()) {
+			results = append(results, file)
+		}
+	}
+
+	return results, nil
 }

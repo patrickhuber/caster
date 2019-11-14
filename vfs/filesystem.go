@@ -27,6 +27,7 @@ type FileSystem interface {
 	Rel(basepath, targetpath string) (string, error)
 	Dir(path string) string
 	Clean(path string) string
+	ReadDirRegex(dirname string, filter string) ([]os.FileInfo, error)
 }
 
 // fileSystem provides default implementaions for functions that are cross provider

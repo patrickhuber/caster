@@ -1,0 +1,16 @@
+folders: 
+- name: regions
+  folders: {{range .regions}}
+  - name: {{ .name }}
+    folders: {{range .enviornments}}
+    - name: {{ .name }}
+      files: 
+      - name: config.yml
+        content: {{templatefile config.yml}}
+      - name: env.yml
+        content: {{templatefile env.yml}}
+      - name: state.yml
+        content: {{templatefile state.yml}}
+      - name: vars.yml
+        content: {{templatefile vars.yml}}
+  {{end}}{{end}}
