@@ -6,11 +6,11 @@ folders:
     - name: {{ .name }}
       files: 
       - name: config.yml
-        content: {{templatefile config.yml}}
+        content: {{templatefile config.yml .}}
       - name: env.yml
-        content: {{templatefile env.yml}}
+        content: {{templatefile env.yml .}}
       - name: state.yml
-        content: {{templatefile state.yml}}
+        content: {{templatefile state.yml .}}
       - name: vars.yml
-        content: {{templatefile vars.yml}}
+        content: {{templatefile vars.yml .}}
 {{end}}{{end}}
