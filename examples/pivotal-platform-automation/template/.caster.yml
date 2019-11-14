@@ -13,4 +13,4 @@ folders:
         content: {{templatefile state.yml}}
       - name: vars.yml
         content: {{templatefile vars.yml}}
-  {{end}}{{end}}
+{{end}}{{end}}
