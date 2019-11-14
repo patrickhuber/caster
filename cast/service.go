@@ -89,6 +89,7 @@ func (s *service) renderCasterFile(content string, data map[string]interface{}) 
 		}
 		t, err := template.
 			New("inner").
+			Funcs(sprig.TxtFuncMap()).
 			Parse(string(content))
 		if err != nil {
 			return "", err
