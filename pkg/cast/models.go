@@ -10,6 +10,7 @@ type Caster struct {
 type File struct {
 	Name    string `yaml:"name" json:"name" mapstructure:"name"`
 	Content string `yaml:"content" json:"content" mapstructure:"content"`
+	Ref     string `yaml:"ref" json:"ref" mapstructure:"ref"`
 }
 
 // Folder represents a folder in the hierachy

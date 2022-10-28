@@ -1,4 +1,4 @@
-package vfs
+package fs
 
 import (
 	"io"
@@ -15,7 +15,7 @@ type aferoFs struct {
 }
 
 // NewAfero creates a FileSystem implemented with afero.Fs
-func NewAfero(fs afero.Fs) FileSystem {
+func NewAfero(fs afero.Fs) FS {
 	return &aferoFs{
 		fs: fs,
 	}

@@ -1,0 +1,30 @@
+folders:
+- name: internal
+- name: pkg
+- name: cmd
+  folders:
+  - name: {{ $package }}
+    files:
+    - name: main.go
+      content: |
+        package main
+        
+        // set with -ldflags
+        var version = ""
+
+        func main(){
+        }
+files:
+- name: go.mod
+  content: |
+    module {{ $module }}
+
+    go 1.18
+
+    require(
+      "github.com/urfave/cli/v2"
+    )
+{{-if $license eq "mit" -}}
+- name: LICENSE
+  ref: MIT    
+{{-end-}}

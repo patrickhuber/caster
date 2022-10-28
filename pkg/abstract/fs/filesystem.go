@@ -1,4 +1,4 @@
-package vfs
+package fs
 
 import (
 	"io"
@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// FileSystem provides an abstract interface for file system operations. It's main purpose is to prevent leaking provider apis across the project.
-type FileSystem interface {
+// FS provides an abstract interface for file system operations. It's main purpose is to prevent leaking provider apis across the project.
+type FS interface {
 	Rename(oldname, newname string) error
 	Create(path string) (File, error)
 	Write(path string, data []byte, permissions os.FileMode) error
@@ -24,6 +24,7 @@ type FileSystem interface {
 	ReadDir(dirname string) ([]os.FileInfo, error)
 	Walk(root string, walkFn filepath.WalkFunc) error
 	Join(segments ...string) string
+	// Rel returns the relative path
 	Rel(basepath, targetpath string) (string, error)
 	Dir(path string) string
 	Clean(path string) string

@@ -8,11 +8,11 @@ import (
 	"text/template"
 	"text/template/parse"
 
-	"github.com/patrickhuber/caster/vfs"
+	afs "github.com/patrickhuber/caster/pkg/abstract/fs"
 )
 
 type generator struct {
-	fs vfs.FileSystem
+	fs afs.FS
 }
 
 func (g *generator) Generate(root string, data map[string]interface{}) (string, error) {

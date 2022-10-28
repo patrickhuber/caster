@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/masterminds/sprig"
-	"github.com/patrickhuber/caster/vfs"
-	"gopkg.in/yaml.v2"
+	"github.com/Masterminds/sprig/v3"
+	afs "github.com/patrickhuber/caster/pkg/abstract/fs"
+	"gopkg.in/yaml.v3"
 )
 
 // Service handles casting of a template
@@ -19,11 +19,11 @@ type Service interface {
 }
 
 type service struct {
-	fs vfs.FileSystem
+	fs afs.FS
 }
 
 // NewService creates a new instance of the cast service
-func NewService(fs vfs.FileSystem) Service {
+func NewService(fs afs.FS) Service {
 	return &service{
 		fs: fs,
 	}
@@ -96,7 +96,7 @@ func (s *service) renderCasterFile(content string, data map[string]interface{}) 
 		}
 		var writer bytes.Buffer
 		err = t.Execute(&writer, data)
-		return writer.String(), nil
+		return writer.String(), err
 	}
 
 	// parse the template
@@ -111,7 +111,7 @@ func (s *service) renderCasterFile(content string, data map[string]interface{}) 
 	// execute the template
 	var writer bytes.Buffer
 	err = t.Execute(&writer, data)
-	return writer.Bytes(), nil
+	return writer.Bytes(), err
 }
 
 func (s *service) deserializeCasterFile(rendered []byte, extension string) (*Caster, error) {
@@ -126,7 +126,7 @@ func (s *service) deserializeCasterFile(rendered []byte, extension string) (*Cas
 
 func (s *service) deserializeYamlCasterFile(rendered []byte) (*Caster, error) {
 	var caster Caster
-	err := yaml.UnmarshalStrict(rendered, &caster)
+	err := yaml.Unmarshal(rendered, &caster)
 	return &caster, err
 }
 
@@ -203,5 +203,15 @@ func (s *service) castFile(file *File, source, target, path string) error {
 		return err
 	}
 	targetPath := s.fs.Join(target, rel)
-	return s.fs.Write(targetPath, []byte(file.Content), 0600)
+	content := []byte(file.Content)
+
+	// is the ref set and the content empty?
+	if file.Content == "" && file.Ref != "" {
+		path := s.fs.Join(source, file.Ref)
+		content, err = s.fs.Read(path)
+		if err != nil {
+			return err
+		}
+	}
+	return s.fs.Write(targetPath, content, 0600)
 }

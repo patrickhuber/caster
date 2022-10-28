@@ -1,0 +1,4 @@
+module: github.com/patrickhuber/caster
+package: caster
+license: mit
+author: patrickhuber

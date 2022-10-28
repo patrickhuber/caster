@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/patrickhuber/caster/vfs"
+	afs "github.com/patrickhuber/caster/pkg/abstract/fs"
 )
 
 var _ = Describe("Caster", func() {
@@ -70,7 +70,7 @@ var _ = Describe("Caster", func() {
 			Expect(writer.String()).To(Equal("one`ntwo`nthree`n"))
 		})
 		It("can render file from within template", func() {
-			fs := vfs.NewMemory()
+			fs := afs.NewMemory()
 			err := fs.Write("test.yml", []byte("test: test"), 0600)
 			Expect(err).To(BeNil())
 
@@ -96,7 +96,7 @@ var _ = Describe("Caster", func() {
 			Expect(writer.String()).To(Equal("test: test"))
 		})
 		It("renders data after function", func() {
-			fs := vfs.NewMemory()
+			fs := afs.NewMemory()
 			err := fs.Write("test.yml", []byte("test: {{ . }}"), 0600)
 			Expect(err).To(BeNil())
 
@@ -131,7 +131,7 @@ var _ = Describe("Caster", func() {
 		})
 
 		It("sprig allows setting child objects", func() {
-			fs := vfs.NewMemory()
+			fs := afs.NewMemory()
 			err := fs.Write("test.yml", []byte("- sub: {{ .sub.name }}\n  top: {{ .top}}"), 0600)
 			Expect(err).To(BeNil())
 
