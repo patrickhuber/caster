@@ -3,7 +3,7 @@ folders:
 - name: pkg
 - name: cmd
   folders:
-  - name: {{ $package }}
+  - name: {{ .package }}
     files:
     - name: main.go
       content: |
@@ -24,7 +24,7 @@ files:
     require(
       "github.com/urfave/cli/v2"
     )
-{{-if $license eq "mit" -}}
+{{-if .license eq "mit" -}}
 - name: LICENSE
   ref: MIT    
 {{-end-}}

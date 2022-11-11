@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
@@ -15,7 +15,7 @@ import (
 
 // Service handles casting of a template
 type Service interface {
-	Cast(source string, target string, data map[string]interface{}) error
+	Cast(req *CastRequest) error
 }
 
 type service struct {
@@ -29,47 +29,70 @@ func NewService(fs afs.FS) Service {
 	}
 }
 
-func (s *service) Cast(source, target string, data map[string]interface{}) error {
+func (s *service) Cast(req *CastRequest) error {
+	fileIsSpecified := len(strings.TrimSpace(req.File)) != 0
+	directoryIsSpecified := len(strings.TrimSpace(req.Directory)) != 0
+	targetIsSpecified := len(strings.TrimSpace(req.Target)) != 0
 
-	info, err := s.getCasterFile(source)
+	if !fileIsSpecified && !directoryIsSpecified {
+		return fmt.Errorf("either source file or source directory must be specified")
+	}
+
+	if fileIsSpecified && directoryIsSpecified {
+		return fmt.Errorf("source file and source directory are mutually exclusive. Specify one but not both")
+	}
+
+	if !targetIsSpecified {
+		return fmt.Errorf("target must be specified")
+	}
+
+	path, err := s.getCasterFile(req)
 	if err != nil {
 		return err
 	}
 
-	content, err := s.getCasterFileContent(source, info)
+	source := s.fs.Dir(path)
+
+	content, err := s.getCasterFileContent(path)
 	if err != nil {
 		return err
 	}
 
-	rendered, err := s.renderCasterFile(content, data)
+	rendered, err := s.renderCasterFile(content, req.Data)
 	if err != nil {
 		return err
 	}
 
-	structured, err := s.deserializeCasterFile(rendered, filepath.Ext(info.Name()))
+	structured, err := s.deserializeCasterFile(rendered, filepath.Ext(path))
 	if err != nil {
 		return err
 	}
 
-	return s.executeCasterFile(structured, source, target)
+	return s.executeCasterFile(structured, source, req.Target)
 }
 
-func (s *service) getCasterFile(source string) (os.FileInfo, error) {
+func (s *service) getCasterFile(req *CastRequest) (string, error) {
+	file := strings.TrimSpace(req.File)
+	if len(file) > 0 {
+		return file, nil
+	}
+
 	// read the caster file in the directory
 	// if it doesn't exist, return an error saying not found
-	files, err := s.fs.ReadDirRegex(source, "[.]caster[.](yml|json)")
+	files, err := s.fs.ReadDirRegex(req.Directory, "[.]caster[.](yml|json)")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	if len(files) == 0 {
-		return nil, fmt.Errorf("template folder '%s' missing .caster.(yml|json) file", source)
+		return "", fmt.Errorf("template folder '%s' missing .caster.(yml|json) file", req.Directory)
 	}
 
-	return files[0], nil
+	file = s.fs.Join(req.Directory, files[0].Name())
+	return file, nil
 }
 
-func (s *service) getCasterFileContent(source string, casterFile os.FileInfo) (string, error) {
-	content, err := s.fs.Read(s.fs.Join(source, casterFile.Name()))
+func (s *service) getCasterFileContent(path string) (string, error) {
+	content, err := s.fs.Read(path)
 	if err != nil {
 		return "", err
 	}

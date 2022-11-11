@@ -1,8 +1,6 @@
 package cast_test
 
 import (
-	"path"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/patrickhuber/caster/pkg/cast"
@@ -13,6 +11,7 @@ import (
 
 type ServiceTest interface {
 	Setup(template *cast.Caster, source, target string)
+	SetupWithFile(template *cast.Caster, sourceFile, target string)
 	SetupString(content, source, target string)
 	SetupBytes(content []byte, source, target string)
 	AssertExists(path string)
@@ -36,20 +35,37 @@ func (t *serviceTest) Setup(template *cast.Caster, source, target string) {
 	t.SetupBytes(content, source, target)
 }
 
+func (t *serviceTest) SetupWithFile(template *cast.Caster, sourceFile, target string) {
+	content, err := yaml.Marshal(template)
+	Expect(err).To(BeNil())
+	t.SetupBytesWithFile(content, sourceFile, target)
+}
+
 func (t *serviceTest) SetupString(content, source, target string) {
 	t.SetupBytes([]byte(content), source, target)
 }
 
 func (t *serviceTest) SetupBytes(content []byte, source, target string) {
-	templatePath := path.Join(source, ".caster.yml")
-	err := t.fs.Write(templatePath, content, 600)
+	templatePath := t.fs.Join(source, ".caster.yml")
+	t.SetupBytesWithFile(content, templatePath, target)
+}
+
+func (t *serviceTest) SetupBytesWithFile(content []byte, sourceFile, target string) {
+	err := t.fs.Write(sourceFile, content, 0600)
 	Expect(err).To(BeNil())
+
+	source := t.fs.Dir(sourceFile)
+	Expect(t.fs.IsDir(source)).To(BeTrue())
 
 	svc := cast.NewService(t.fs)
-	err = svc.Cast(source, target, nil)
+
+	req := &cast.CastRequest{
+		File:   sourceFile,
+		Target: target,
+	}
+	err = svc.Cast(req)
 	Expect(err).To(BeNil())
 
-	// source directory exists
 	t.AssertExists(target)
 }
 
@@ -71,6 +87,35 @@ func (t *serviceTest) FileSystem() afs.FS {
 
 var _ = Describe("Service", func() {
 	Describe("Cast", func() {
+		When("caster file specified", func() {
+			It("applies from specified file", func() {
+				template := &cast.Caster{
+					Files: []cast.File{
+						{
+							Name:    "test.yml",
+							Content: "test: test",
+						},
+					},
+					Folders: []cast.Folder{
+						{
+							Name: "sub",
+							Files: []cast.File{
+								{
+									Name: "test.yml",
+								},
+							},
+						},
+					},
+				}
+				t := NewServiceTest()
+				t.SetupWithFile(template, "/template/custom.yml", "/output")
+
+				t.AssertExists("/output/test.yml")
+				t.AssertContents("/output/test.yml", "test: test")
+				t.AssertExists("/output/sub")
+				t.AssertExists("/output/sub/test.yml")
+			})
+		})
 		It("writes plain files to target", func() {
 			template := &cast.Caster{
 				Files: []cast.File{

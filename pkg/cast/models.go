@@ -19,3 +19,11 @@ type Folder struct {
 	Files   []File   `yaml:"files" json:"files" mapstructure:"files"`
 	Folders []Folder `yaml:"folders" json:"folders" mapstructure:"folders"`
 }
+
+// CastRequest is the request object for casting a template
+type CastRequest struct {
+	File      string
+	Directory string
+	Target    string
+	Data      map[string]any
+}
