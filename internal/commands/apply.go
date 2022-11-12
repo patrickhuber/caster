@@ -41,18 +41,20 @@ type ApplyCommand struct {
 }
 
 type ApplyOptions struct {
-	Directory string
-	File      string
-	Name      string
-	Target    string
+	Directory     string
+	File          string
+	Name          string
+	Target        string
+	VariableFiles []string
 }
 
 func (cmd *ApplyCommand) Execute() error {
 	// create apply request
 	request := &cast.CastRequest{
-		Directory: cmd.Options.Directory,
-		File:      cmd.Options.File,
-		Target:    cmd.Options.Target,
+		Directory:     cmd.Options.Directory,
+		File:          cmd.Options.File,
+		VariableFiles: cmd.Options.VariableFiles,
+		Target:        cmd.Options.Target,
 	}
 	err := cmd.Service.Cast(request)
 	return err
@@ -69,6 +71,7 @@ func ApplyAction(ctx *cli.Context) error {
 			Directory: ctx.String(ApplyDirectoryFlag),
 			File:      ctx.String(ApplyFileFlag),
 			Name:      ctx.String(ApplyNameFlag),
+			Target:    ctx.Args().First(),
 		},
 		Service: service,
 	}

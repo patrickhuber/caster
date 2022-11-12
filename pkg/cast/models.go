@@ -22,8 +22,9 @@ type Folder struct {
 
 // CastRequest is the request object for casting a template
 type CastRequest struct {
-	File      string
-	Directory string
-	Target    string
-	Data      map[string]any
+	File          string
+	Directory     string
+	Target        string
+	VariableFiles []string
+	Data          map[string]any
 }
