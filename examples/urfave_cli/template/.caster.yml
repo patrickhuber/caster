@@ -17,14 +17,15 @@ folders:
 files:
 - name: go.mod
   content: |
-    module {{ $module }}
+    module {{ .module }}
 
     go 1.18
 
     require(
       "github.com/urfave/cli/v2"
     )
-{{-if .license eq "mit" -}}
+{{- if eq .license "mit" }}
 - name: LICENSE
-  ref: MIT    
-{{-end-}}
+  content: | 
+    {{- templatefile "./MIT" . | nindent 4 }}
+{{- end -}}

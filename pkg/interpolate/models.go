@@ -1,4 +1,6 @@
-package cast
+package interpolate
+
+import "github.com/patrickhuber/caster/pkg/models"
 
 type Variable struct {
 	File  string
@@ -11,6 +13,10 @@ type Variable struct {
 type Request struct {
 	File      string
 	Directory string
-	Target    string
 	Variables []Variable
+}
+
+type Response struct {
+	SourceFile string
+	Caster     models.Caster
 }

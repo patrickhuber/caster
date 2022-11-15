@@ -1,7 +1,11 @@
 package commands
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/patrickhuber/caster/internal/global"
+	"github.com/patrickhuber/caster/pkg/abstract/env"
 	"github.com/patrickhuber/caster/pkg/cast"
 	"github.com/patrickhuber/go-di"
 	"github.com/urfave/cli/v2"
@@ -11,6 +15,8 @@ const (
 	ApplyFileFlag      = "apply"
 	ApplyDirectoryFlag = "directory"
 	ApplyNameFlag      = "name"
+	ApplyVarFlag       = "var"
+	ApplyVarFileFlag   = "var-file"
 )
 
 var Apply = &cli.Command{
@@ -32,49 +38,121 @@ var Apply = &cli.Command{
 			Name:    ApplyNameFlag,
 			Aliases: []string{"n"},
 		},
+		&cli.StringSliceFlag{
+			Name: ApplyVarFlag,
+		},
+		&cli.StringSliceFlag{
+			Name:      ApplyVarFileFlag,
+			TakesFile: true,
+		},
 	},
 }
 
 type ApplyCommand struct {
-	Options ApplyOptions
-	Service cast.Service
+	Options     ApplyOptions
+	Environment env.Env      `inject:""`
+	Service     cast.Service `inject:""`
 }
 
 type ApplyOptions struct {
-	Directory     string
-	File          string
-	Name          string
-	Target        string
-	VariableFiles []string
+	Directory string
+	File      string
+	Name      string
+	Target    string
+	Variables []ApplyVariable
+}
+
+type ApplyVariable struct {
+	Key   string
+	Value string
+	File  string
+	Env   string
 }
 
 func (cmd *ApplyCommand) Execute() error {
+	variables := []cast.Variable{}
+	for _, v := range cmd.Options.Variables {
+		variables = append(variables, cast.Variable{
+			File:  v.File,
+			Key:   v.Key,
+			Value: v.Value,
+			Env:   v.Env,
+		})
+	}
+
 	// create apply request
-	request := &cast.CastRequest{
-		Directory:     cmd.Options.Directory,
-		File:          cmd.Options.File,
-		VariableFiles: cmd.Options.VariableFiles,
-		Target:        cmd.Options.Target,
+	request := &cast.Request{
+		Directory: cmd.Options.Directory,
+		File:      cmd.Options.File,
+		Variables: variables,
+		Target:    cmd.Options.Target,
 	}
 	err := cmd.Service.Cast(request)
 	return err
 }
 
 func ApplyAction(ctx *cli.Context) error {
+
+	cmd := &ApplyCommand{}
 	resolver := ctx.App.Metadata[global.DependencyInjectionContainer].(di.Resolver)
-	service, err := di.Resolve[cast.Service](resolver)
+	err := di.Inject(resolver, cmd)
 	if err != nil {
 		return err
 	}
-	cmd := &ApplyCommand{
-		Options: ApplyOptions{
-			Directory: ctx.String(ApplyDirectoryFlag),
-			File:      ctx.String(ApplyFileFlag),
-			Name:      ctx.String(ApplyNameFlag),
-			Target:    ctx.Args().First(),
-		},
-		Service: service,
+
+	variables, err := getFlagVariables(ctx)
+	if err != nil {
+		return err
+	}
+
+	envVariables, err := getEnvironmentVariables(cmd.Environment)
+	if err != nil {
+		return err
+	}
+
+	cmd.Options = ApplyOptions{
+		Directory: ctx.String(ApplyDirectoryFlag),
+		File:      ctx.String(ApplyFileFlag),
+		Name:      ctx.String(ApplyNameFlag),
+		Target:    ctx.Args().First(),
+		Variables: append(variables, envVariables...),
 	}
 
 	return cmd.Execute()
+}
+
+func getFlagVariables(ctx *cli.Context) ([]ApplyVariable, error) {
+	variables := []ApplyVariable{}
+	names := ctx.FlagNames()
+	varFlags := ctx.StringSlice(ApplyVarFlag)
+	varFileFlags := ctx.StringSlice(ApplyVarFileFlag)
+	varIndex := 0
+	varFileIndex := 0
+	for _, name := range names {
+		switch name {
+		case ApplyVarFlag:
+			varFlag := varFlags[varIndex]
+			split := strings.Split(varFlag, "=")
+			if len(split) != 2 {
+				return nil, fmt.Errorf("unable to parse var flag '%s'. Expected flag in format --var \"key=value\"", varFlag)
+			}
+			variables = append(variables, ApplyVariable{Key: split[0], Value: split[1]})
+			varIndex++
+		case ApplyVarFileFlag:
+			variables = append(variables, ApplyVariable{File: varFileFlags[varFileIndex]})
+			varFileIndex++
+		}
+	}
+	return variables, nil
+}
+
+func getEnvironmentVariables(e env.Env) ([]ApplyVariable, error) {
+	variables := []ApplyVariable{}
+	for _, v := range e.List() {
+		if !strings.HasPrefix(v, "CASTER_VAR_") {
+			continue
+		}
+		variables = append(variables, ApplyVariable{Env: v})
+	}
+	return variables, nil
 }

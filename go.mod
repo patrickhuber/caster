@@ -7,7 +7,6 @@ require (
 	github.com/onsi/ginkgo/v2 v2.5.0
 	github.com/onsi/gomega v1.24.1
 	github.com/patrickhuber/go-di v0.5.2
-	github.com/patrickhuber/go-log v0.2.0
 	github.com/spf13/afero v1.9.2
 	github.com/urfave/cli/v2 v2.23.4
 	gopkg.in/yaml.v3 v3.0.1
