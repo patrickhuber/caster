@@ -205,7 +205,7 @@ files:
 			t.SetupString(template, &cast.Request{
 				Directory: "/template",
 				Target:    "/output",
-				Variables: []cast.Variable{
+				Variables: []models.Variable{
 					{Key: "key", Value: "value"},
 				},
 			})
@@ -225,7 +225,7 @@ files:
 			t.SetupString(template, &cast.Request{
 				Directory: "/template",
 				Target:    "/output",
-				Variables: []cast.Variable{
+				Variables: []models.Variable{
 					{Key: "key", Value: "value"},
 				},
 			})
@@ -248,7 +248,7 @@ files:
 			t.SetupString(template, &cast.Request{
 				Directory: "/template",
 				Target:    "/output",
-				Variables: []cast.Variable{
+				Variables: []models.Variable{
 					{
 						File: "/data.yml",
 					},
@@ -266,7 +266,7 @@ files:
 			t.SetupString(template, &cast.Request{
 				Directory: "/template",
 				Target:    "/output",
-				Variables: []cast.Variable{
+				Variables: []models.Variable{
 					{
 						Key:   "variable",
 						Value: "test",
@@ -286,7 +286,7 @@ files:
 			t.SetupString(template, &cast.Request{
 				Directory: "/template",
 				Target:    "/output",
-				Variables: []cast.Variable{
+				Variables: []models.Variable{
 					{
 						Env: "CASTER_VAR_variable",
 					},

@@ -29,9 +29,9 @@ func NewService(fs afs.FS, inter interpolate.Service) Service {
 
 func (s *service) Cast(req *Request) error {
 
-	variables := []interpolate.Variable{}
+	variables := []models.Variable{}
 	for _, v := range req.Variables {
-		variables = append(variables, interpolate.Variable{
+		variables = append(variables, models.Variable{
 			Env:   v.Env,
 			File:  v.File,
 			Key:   v.Key,

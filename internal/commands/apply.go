@@ -7,6 +7,7 @@ import (
 	"github.com/patrickhuber/caster/internal/global"
 	"github.com/patrickhuber/caster/pkg/abstract/env"
 	"github.com/patrickhuber/caster/pkg/cast"
+	"github.com/patrickhuber/caster/pkg/models"
 	"github.com/patrickhuber/go-di"
 	"github.com/urfave/cli/v2"
 )
@@ -59,20 +60,13 @@ type ApplyOptions struct {
 	File      string
 	Name      string
 	Target    string
-	Variables []ApplyVariable
-}
-
-type ApplyVariable struct {
-	Key   string
-	Value string
-	File  string
-	Env   string
+	Variables []models.Variable
 }
 
 func (cmd *ApplyCommand) Execute() error {
-	variables := []cast.Variable{}
+	variables := []models.Variable{}
 	for _, v := range cmd.Options.Variables {
-		variables = append(variables, cast.Variable{
+		variables = append(variables, models.Variable{
 			File:  v.File,
 			Key:   v.Key,
 			Value: v.Value,
@@ -121,8 +115,8 @@ func ApplyAction(ctx *cli.Context) error {
 	return cmd.Execute()
 }
 
-func getFlagVariables(ctx *cli.Context) ([]ApplyVariable, error) {
-	variables := []ApplyVariable{}
+func getFlagVariables(ctx *cli.Context) ([]models.Variable, error) {
+	variables := []models.Variable{}
 	names := ctx.FlagNames()
 	varFlags := ctx.StringSlice(ApplyVarFlag)
 	varFileFlags := ctx.StringSlice(ApplyVarFileFlag)
@@ -136,23 +130,23 @@ func getFlagVariables(ctx *cli.Context) ([]ApplyVariable, error) {
 			if len(split) != 2 {
 				return nil, fmt.Errorf("unable to parse var flag '%s'. Expected flag in format --var \"key=value\"", varFlag)
 			}
-			variables = append(variables, ApplyVariable{Key: split[0], Value: split[1]})
+			variables = append(variables, models.Variable{Key: split[0], Value: split[1]})
 			varIndex++
 		case ApplyVarFileFlag:
-			variables = append(variables, ApplyVariable{File: varFileFlags[varFileIndex]})
+			variables = append(variables, models.Variable{File: varFileFlags[varFileIndex]})
 			varFileIndex++
 		}
 	}
 	return variables, nil
 }
 
-func getEnvironmentVariables(e env.Env) ([]ApplyVariable, error) {
-	variables := []ApplyVariable{}
+func getEnvironmentVariables(e env.Env) ([]models.Variable, error) {
+	variables := []models.Variable{}
 	for _, v := range e.List() {
 		if !strings.HasPrefix(v, "CASTER_VAR_") {
 			continue
 		}
-		variables = append(variables, ApplyVariable{Env: v})
+		variables = append(variables, models.Variable{Env: v})
 	}
 	return variables, nil
 }

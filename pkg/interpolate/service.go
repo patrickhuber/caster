@@ -81,7 +81,7 @@ func (s *service) Interpolate(req *Request) (*Response, error) {
 // - files
 // - command line arguments
 // - environment variables
-func (s *service) createDataMap(variables []Variable) (map[string]any, error) {
+func (s *service) createDataMap(variables []models.Variable) (map[string]any, error) {
 	files := map[string]any{}
 	args := map[string]any{}
 	env := map[string]any{}

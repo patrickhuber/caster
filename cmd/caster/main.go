@@ -23,6 +23,7 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			commands.Apply,
+			commands.Interpolate,
 		},
 	}
 	err := app.Run(os.Args)
