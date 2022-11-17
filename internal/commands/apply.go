@@ -117,7 +117,16 @@ func ApplyAction(ctx *cli.Context) error {
 
 func getFlagVariables(ctx *cli.Context) ([]models.Variable, error) {
 	variables := []models.Variable{}
-	names := ctx.FlagNames()
+
+	names := []string{}
+	args, _ := ctx.App.Metadata[global.OSArgs].([]string)
+	for _, a := range args {
+		if strings.Contains(a, "-"+ApplyVarFileFlag) {
+			names = append(names, ApplyVarFileFlag)
+		} else if strings.Contains(a, "-"+ApplyVarFlag) {
+			names = append(names, ApplyVarFlag)
+		}
+	}
 	varFlags := ctx.StringSlice(ApplyVarFlag)
 	varFileFlags := ctx.StringSlice(ApplyVarFileFlag)
 	varIndex := 0

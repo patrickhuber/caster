@@ -20,6 +20,7 @@ func main() {
 		Version: version,
 		Metadata: map[string]interface{}{
 			global.DependencyInjectionContainer: runtime.Container(),
+			global.OSArgs:                       os.Args,
 		},
 		Commands: []*cli.Command{
 			commands.Apply,

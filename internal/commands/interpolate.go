@@ -1,10 +1,9 @@
 package commands
 
 import (
-	"os"
-
 	"github.com/patrickhuber/caster/internal/global"
 	"github.com/patrickhuber/caster/pkg/abstract/env"
+	"github.com/patrickhuber/caster/pkg/console"
 	"github.com/patrickhuber/caster/pkg/interpolate"
 	"github.com/patrickhuber/caster/pkg/models"
 	"github.com/patrickhuber/go-di"
@@ -53,6 +52,7 @@ type InterpolateCommand struct {
 	Options     InterpolateOptions
 	Environment env.Env             `inject:""`
 	Service     interpolate.Service `inject:""`
+	Console     console.Console     `inject:""`
 }
 
 type InterpolateOptions struct {
@@ -112,7 +112,7 @@ func (cmd *InterpolateCommand) Execute() error {
 	if err != nil {
 		return err
 	}
-	encoder := yaml.NewEncoder(os.Stdout)
+	encoder := yaml.NewEncoder(cmd.Console.Out())
 	encoder.SetIndent(2)
 	defer encoder.Close()
 	return encoder.Encode(resp.Caster)
