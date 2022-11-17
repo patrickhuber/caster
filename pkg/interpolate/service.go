@@ -82,7 +82,6 @@ func (s *service) Interpolate(req *Request) (*Response, error) {
 // - command line arguments
 // - environment variables
 func (s *service) createDataMap(variables []models.Variable) (map[string]any, error) {
-	files := map[string]any{}
 	args := map[string]any{}
 	env := map[string]any{}
 	for _, variable := range variables {
@@ -108,11 +107,11 @@ func (s *service) createDataMap(variables []models.Variable) (map[string]any, er
 				return nil, err
 			}
 			for k, v := range file {
-				files[k] = v
+				args[k] = v
 			}
 		}
 	}
-	data := files
+	data := map[string]any{}
 	for k, v := range args {
 		data[k] = v
 	}

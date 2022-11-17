@@ -128,7 +128,41 @@ var _ = Describe("Interpolate", func() {
 		})
 	})
 	When("mixed arguments", func() {
-		It("can override with var", func() {})
-		It("can override with var-file", func() {})
+		It("can override with var", func() {
+			f.Write("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
+			f.Write("/data/1.yml", []byte("key: first"), 0600)
+
+			args := []string{"caster", "interpolate", "--var-file", "/data/1.yml", "--var", "key=second", "-d", "/template"}
+			app.Metadata[global.OSArgs] = args
+			err := app.Run(args)
+			Expect(err).To(BeNil())
+
+			buf, ok := con.Out().(*bytes.Buffer)
+			Expect(ok).To(BeTrue())
+			want := `files:
+  - name: test.txt
+    content: second
+`
+			have := buf.String()
+			Expect(have).To(Equal(want), cmp.Diff(have, want))
+		})
+		It("can override with var-file", func() {
+			f.Write("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
+			f.Write("/data/1.yml", []byte("key: second"), 0600)
+
+			args := []string{"caster", "interpolate", "--var", "key=first", "--var-file", "/data/1.yml", "-d", "/template"}
+			app.Metadata[global.OSArgs] = args
+			err := app.Run(args)
+			Expect(err).To(BeNil())
+
+			buf, ok := con.Out().(*bytes.Buffer)
+			Expect(ok).To(BeTrue())
+			want := `files:
+  - name: test.txt
+    content: second
+`
+			have := buf.String()
+			Expect(have).To(Equal(want), cmp.Diff(have, want))
+		})
 	})
 })
