@@ -149,13 +149,14 @@ func getFlagVariables(ctx *cli.Context) ([]models.Variable, error) {
 	return variables, nil
 }
 
+// getEnvironmentVariables returns the list of the environment variable keys that match the caster prefix
 func getEnvironmentVariables(e env.Environment) ([]models.Variable, error) {
 	variables := []models.Variable{}
-	for k, v := range e.Export() {
+	for k := range e.Export() {
 		if !strings.HasPrefix(k, "CASTER_VAR_") {
 			continue
 		}
-		variables = append(variables, models.Variable{Env: v})
+		variables = append(variables, models.Variable{Env: k})
 	}
 	return variables, nil
 }
