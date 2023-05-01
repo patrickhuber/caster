@@ -61,7 +61,13 @@ func (t *serviceTest) SetupBytes(content []byte, request *cast.Request) {
 	if len(strings.TrimSpace(sourceFile)) == 0 {
 		sourceFile = t.path.Join(request.Directory, ".caster.yml")
 	}
-	err := t.fs.WriteFile(sourceFile, content, 0600)
+	err := t.fs.Mkdir("/", 0600)
+	Expect(err).To(BeNil())
+
+	err = t.fs.Mkdir("/template", 0600)
+	Expect(err).To(BeNil())
+
+	err = t.fs.WriteFile(sourceFile, content, 0600)
 	Expect(err).To(BeNil())
 
 	source := t.path.Dir(sourceFile)
