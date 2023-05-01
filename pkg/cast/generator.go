@@ -8,11 +8,13 @@ import (
 	"text/template"
 	"text/template/parse"
 
-	afs "github.com/patrickhuber/caster/pkg/abstract/fs"
+	"github.com/patrickhuber/go-xplat/filepath"
+	afs "github.com/patrickhuber/go-xplat/fs"
 )
 
 type generator struct {
-	fs afs.FS
+	fs   afs.FS
+	path filepath.Processor
 }
 
 func (g *generator) Generate(root string, data map[string]interface{}) (string, error) {
@@ -55,7 +57,7 @@ func (g *generator) build(root string, buffer io.Writer, level int) error {
 		return err
 	}
 	for _, file := range files {
-		err = g.build(g.fs.Join(root, file.Name()), buffer, level+1)
+		err = g.build(g.path.Join(root, file.Name()), buffer, level+1)
 		if err != nil {
 			return err
 		}

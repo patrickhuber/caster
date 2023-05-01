@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
+	"io/fs"
+	"regexp"
 	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/patrickhuber/caster/pkg/abstract/env"
-	afs "github.com/patrickhuber/caster/pkg/abstract/fs"
 	"github.com/patrickhuber/caster/pkg/models"
+	"github.com/patrickhuber/go-xplat/env"
+	"github.com/patrickhuber/go-xplat/filepath"
+	afs "github.com/patrickhuber/go-xplat/fs"
 	"gopkg.in/yaml.v3"
 )
 
@@ -20,16 +22,18 @@ type Service interface {
 }
 
 // NewService creates a new instance of the cast service
-func NewService(fs afs.FS, env env.Env) Service {
+func NewService(fs afs.FS, env env.Environment, path filepath.Processor) Service {
 	return &service{
-		fs:  fs,
-		env: env,
+		fs:   fs,
+		env:  env,
+		path: path,
 	}
 }
 
 type service struct {
-	fs  afs.FS
-	env env.Env
+	fs   afs.FS
+	path filepath.Processor
+	env  env.Environment
 }
 
 func (s *service) Interpolate(req *Request) (*Response, error) {
@@ -65,7 +69,7 @@ func (s *service) Interpolate(req *Request) (*Response, error) {
 		return nil, err
 	}
 
-	structured, err := s.deserializeCasterFile(rendered, filepath.Ext(path))
+	structured, err := s.deserializeCasterFile(rendered, s.path.Ext(path))
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +100,7 @@ func (s *service) createDataMap(variables []models.Variable) (map[string]any, er
 			env[key] = s.env.Get(variable.Env)
 		}
 		if isFile {
-			content, err := s.fs.Read(variable.File)
+			content, err := s.fs.ReadFile(variable.File)
 			if err != nil {
 				return nil, err
 			}
@@ -121,6 +125,25 @@ func (s *service) createDataMap(variables []models.Variable) (map[string]any, er
 	return data, nil
 }
 
+func (s *service) readDirRegex(dir string, regex string) ([]fs.DirEntry, error) {
+
+	reg, err := regexp.Compile(regex)
+	if err != nil {
+		return nil, err
+	}
+	files, err := s.fs.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var result []fs.DirEntry
+	for _, f := range files {
+		if reg.MatchString(f.Name()) {
+			result = append(result, f)
+		}
+	}
+	return result, nil
+}
+
 func (s *service) getCasterFile(req *Request) (string, error) {
 	file := strings.TrimSpace(req.File)
 	if len(file) > 0 {
@@ -129,7 +152,7 @@ func (s *service) getCasterFile(req *Request) (string, error) {
 
 	// read the caster file in the directory
 	// if it doesn't exist, return an error saying not found
-	files, err := s.fs.ReadDirRegex(req.Directory, "[.]caster[.](yml|json)")
+	files, err := s.readDirRegex(req.Directory, "[.]caster[.](yml|json)")
 	if err != nil {
 		return "", err
 	}
@@ -137,12 +160,12 @@ func (s *service) getCasterFile(req *Request) (string, error) {
 		return "", fmt.Errorf("template folder '%s' missing .caster.(yml|json) file", req.Directory)
 	}
 
-	file = s.fs.Join(req.Directory, files[0].Name())
+	file = s.path.Join(req.Directory, files[0].Name())
 	return file, nil
 }
 
 func (s *service) getCasterFileContent(path string) (string, error) {
-	content, err := s.fs.Read(path)
+	content, err := s.fs.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
@@ -156,8 +179,8 @@ func (s *service) renderCasterFile(content, sourceFile string, data map[string]i
 
 	// templatefile renders a template file and then writes the rendered string to the calling template
 	funcMap["templatefile"] = func(path string, data interface{}) (string, error) {
-		directory := s.fs.Dir(sourceFile)
-		content, err := s.fs.Read(s.fs.Join(directory, path))
+		directory := s.path.Dir(sourceFile)
+		content, err := s.fs.ReadFile(s.path.Join(directory, path))
 		if err != nil {
 			return "", err
 		}

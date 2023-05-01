@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/patrickhuber/caster/internal/global"
-	"github.com/patrickhuber/caster/pkg/abstract/env"
 	"github.com/patrickhuber/caster/pkg/cast"
 	"github.com/patrickhuber/caster/pkg/models"
 	"github.com/patrickhuber/go-di"
+	"github.com/patrickhuber/go-xplat/env"
 	"github.com/urfave/cli/v2"
 )
 
@@ -51,8 +51,8 @@ var Apply = &cli.Command{
 
 type ApplyCommand struct {
 	Options     ApplyOptions
-	Environment env.Env      `inject:""`
-	Service     cast.Service `inject:""`
+	Environment env.Environment `inject:""`
+	Service     cast.Service    `inject:""`
 }
 
 type ApplyOptions struct {
@@ -149,10 +149,10 @@ func getFlagVariables(ctx *cli.Context) ([]models.Variable, error) {
 	return variables, nil
 }
 
-func getEnvironmentVariables(e env.Env) ([]models.Variable, error) {
+func getEnvironmentVariables(e env.Environment) ([]models.Variable, error) {
 	variables := []models.Variable{}
-	for _, v := range e.List() {
-		if !strings.HasPrefix(v, "CASTER_VAR_") {
+	for k, v := range e.Export() {
+		if !strings.HasPrefix(k, "CASTER_VAR_") {
 			continue
 		}
 		variables = append(variables, models.Variable{Env: v})

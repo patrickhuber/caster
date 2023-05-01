@@ -7,7 +7,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	afs "github.com/patrickhuber/caster/pkg/abstract/fs"
+	afs "github.com/patrickhuber/go-xplat/fs"
 )
 
 var _ = Describe("Caster", func() {
@@ -71,12 +71,12 @@ var _ = Describe("Caster", func() {
 		})
 		It("can render file from within template", func() {
 			fs := afs.NewMemory()
-			err := fs.Write("test.yml", []byte("test: test"), 0600)
+			err := fs.WriteFile("test.yml", []byte("test: test"), 0600)
 			Expect(err).To(BeNil())
 
 			funcMap := map[string]interface{}{
 				"file": func(path string) (string, error) {
-					bytes, err := fs.Read(path)
+					bytes, err := fs.ReadFile(path)
 					if err != nil {
 						return "", err
 					}
@@ -97,12 +97,12 @@ var _ = Describe("Caster", func() {
 		})
 		It("renders data after function", func() {
 			fs := afs.NewMemory()
-			err := fs.Write("test.yml", []byte("test: {{ . }}"), 0600)
+			err := fs.WriteFile("test.yml", []byte("test: {{ . }}"), 0600)
 			Expect(err).To(BeNil())
 
 			funcMap := map[string]interface{}{
 				"templatefile": func(path string, data interface{}) (string, error) {
-					content, err := fs.Read(path)
+					content, err := fs.ReadFile(path)
 					if err != nil {
 						return "", err
 					}
@@ -114,6 +114,9 @@ var _ = Describe("Caster", func() {
 					}
 					var writer bytes.Buffer
 					err = t.Execute(&writer, data)
+					if err != nil {
+						return "", err
+					}
 					return writer.String(), nil
 				},
 			}
@@ -132,12 +135,12 @@ var _ = Describe("Caster", func() {
 
 		It("sprig allows setting child objects", func() {
 			fs := afs.NewMemory()
-			err := fs.Write("test.yml", []byte("- sub: {{ .sub.name }}\n  top: {{ .top}}"), 0600)
+			err := fs.WriteFile("test.yml", []byte("- sub: {{ .sub.name }}\n  top: {{ .top}}"), 0600)
 			Expect(err).To(BeNil())
 
 			funcMap := sprig.TxtFuncMap()
 			funcMap["templatefile"] = func(path string, data interface{}) (string, error) {
-				content, err := fs.Read(path)
+				content, err := fs.ReadFile(path)
 				if err != nil {
 					return "", err
 				}
@@ -160,18 +163,18 @@ var _ = Describe("Caster", func() {
 
 			data := map[string]interface{}{
 				"test": []map[string]interface{}{
-					map[string]interface{}{
+					{
 						"name": "one",
 						"sub": []map[string]interface{}{
-							map[string]interface{}{
+							{
 								"name": "hi",
 							},
 						},
 					},
-					map[string]interface{}{
+					{
 						"name": "two",
 						"sub": []map[string]interface{}{
-							map[string]interface{}{
+							{
 								"name": "there",
 							},
 						},

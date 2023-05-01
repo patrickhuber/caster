@@ -10,8 +10,10 @@ import (
 	"github.com/patrickhuber/caster/pkg/models"
 	"gopkg.in/yaml.v3"
 
-	"github.com/patrickhuber/caster/pkg/abstract/env"
-	afs "github.com/patrickhuber/caster/pkg/abstract/fs"
+	"github.com/patrickhuber/go-xplat/env"
+	"github.com/patrickhuber/go-xplat/filepath"
+	afs "github.com/patrickhuber/go-xplat/fs"
+	"github.com/patrickhuber/go-xplat/platform"
 )
 
 type ServiceTest interface {
@@ -21,23 +23,26 @@ type ServiceTest interface {
 	AssertExists(path string)
 	AssertContents(path, content string)
 	FileSystem() afs.FS
-	Environment() env.Env
+	Environment() env.Environment
 }
 
 type serviceTest struct {
 	fs    afs.FS
-	env   env.Env
+	path  filepath.Processor
+	env   env.Environment
 	inter interpolate.Service
 }
 
 func NewServiceTest() ServiceTest {
-	fs := afs.NewMemory()
+	path := filepath.NewProcessorWithPlatform(platform.Linux)
+	fs := afs.NewMemory(afs.WithProcessor(path))
 	e := env.NewMemory()
 
 	return &serviceTest{
 		fs:    fs,
 		env:   e,
-		inter: interpolate.NewService(fs, e),
+		inter: interpolate.NewService(fs, e, path),
+		path:  path,
 	}
 }
 
@@ -54,15 +59,17 @@ func (t *serviceTest) SetupString(content string, request *cast.Request) {
 func (t *serviceTest) SetupBytes(content []byte, request *cast.Request) {
 	sourceFile := request.File
 	if len(strings.TrimSpace(sourceFile)) == 0 {
-		sourceFile = t.fs.Join(request.Directory, ".caster.yml")
+		sourceFile = t.path.Join(request.Directory, ".caster.yml")
 	}
-	err := t.fs.Write(sourceFile, content, 0600)
+	err := t.fs.WriteFile(sourceFile, content, 0600)
 	Expect(err).To(BeNil())
 
-	source := t.fs.Dir(sourceFile)
-	Expect(t.fs.IsDir(source)).To(BeTrue())
+	source := t.path.Dir(sourceFile)
+	sourceInfo, err := t.fs.Stat(source)
+	Expect(err).To(BeNil())
+	Expect(sourceInfo.IsDir()).To(BeTrue())
 
-	svc := cast.NewService(t.fs, t.inter)
+	svc := cast.NewService(t.fs, t.inter, t.path)
 
 	err = svc.Cast(request)
 	Expect(err).To(BeNil())
@@ -77,7 +84,7 @@ func (t *serviceTest) AssertExists(path string) {
 }
 
 func (t *serviceTest) AssertContents(path, content string) {
-	data, err := t.fs.Read(path)
+	data, err := t.fs.ReadFile(path)
 	Expect(err).To(BeNil())
 	Expect(string(data)).To(Equal(content))
 }
@@ -86,7 +93,7 @@ func (t *serviceTest) FileSystem() afs.FS {
 	return t.fs
 }
 
-func (t *serviceTest) Environment() env.Env {
+func (t *serviceTest) Environment() env.Environment {
 	return t.env
 }
 
@@ -185,7 +192,7 @@ files:
   ref: test.txt`
 			t := NewServiceTest()
 
-			err := t.FileSystem().Write("/template/test.txt", []byte("test"), 0644)
+			err := t.FileSystem().WriteFile("/template/test.txt", []byte("test"), 0644)
 			Expect(err).To(BeNil())
 
 			t.SetupString(template, &cast.Request{Directory: "/template", Target: "/output"})
@@ -199,7 +206,7 @@ files:
   content: {{ templatefile "./test.txt" . }}`
 
 			t := NewServiceTest()
-			err := t.FileSystem().Write("/template/test.txt", []byte("{{ .key }}"), 0644)
+			err := t.FileSystem().WriteFile("/template/test.txt", []byte("{{ .key }}"), 0644)
 			Expect(err).To(BeNil())
 
 			t.SetupString(template, &cast.Request{
@@ -219,7 +226,7 @@ files:
   content: |
     {{- templatefile "./test.txt" . | nindent 4 }}`
 			t := NewServiceTest()
-			err := t.FileSystem().Write("/template/test.txt", []byte("{{ .key }}\n{{ .key }}"), 0644)
+			err := t.FileSystem().WriteFile("/template/test.txt", []byte("{{ .key }}\n{{ .key }}"), 0644)
 			Expect(err).To(BeNil())
 
 			t.SetupString(template, &cast.Request{
@@ -242,7 +249,7 @@ files:
 
 			t := NewServiceTest()
 			fs := t.FileSystem()
-			err := fs.Write("/data.yml", []byte(data), 0644)
+			err := fs.WriteFile("/data.yml", []byte(data), 0644)
 			Expect(err).To(BeNil())
 
 			t.SetupString(template, &cast.Request{

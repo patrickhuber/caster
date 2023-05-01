@@ -4,22 +4,28 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/patrickhuber/caster/pkg/abstract/env"
-	afs "github.com/patrickhuber/caster/pkg/abstract/fs"
 	"github.com/patrickhuber/caster/pkg/interpolate"
 	"github.com/patrickhuber/caster/pkg/models"
+	"github.com/patrickhuber/go-xplat/env"
+	"github.com/patrickhuber/go-xplat/filepath"
+	afs "github.com/patrickhuber/go-xplat/fs"
+	"github.com/patrickhuber/go-xplat/platform"
 )
 
 var _ = Describe("Service", func() {
 	var (
-		fs  afs.FS
-		e   env.Env
-		svc interpolate.Service
+		fs   afs.FS
+		e    env.Environment
+		svc  interpolate.Service
+		path filepath.Processor
 	)
 	BeforeEach(func() {
-		fs = afs.NewMemory()
+		path = filepath.NewProcessorWithPlatform(platform.Linux)
+		fs = afs.NewMemory(afs.WithProcessor(path))
+		Expect(fs.Mkdir("/", 0600)).To(BeNil())
+		Expect(fs.Mkdir("/template", 0600)).To(BeNil())
 		e = env.NewMemory()
-		svc = interpolate.NewService(fs, e)
+		svc = interpolate.NewService(fs, e, path)
 	})
 	Describe("Interpolate", func() {
 		It("can interpolate", func() {
@@ -28,7 +34,8 @@ files:
 - name: test.txt
   content: test
 `
-			fs.Write("/template/.caster.yml", []byte(template), 0600)
+			err := fs.WriteFile("/template/.caster.yml", []byte(template), 0600)
+			Expect(err).To(BeNil())
 			resp, err := svc.Interpolate(&interpolate.Request{
 				Directory: "/template",
 			})
@@ -47,7 +54,8 @@ files:
 - name: test.txt
   content: {{ .key }}
 `
-			fs.Write("/template/.caster.yml", []byte(template), 0600)
+			err := fs.WriteFile("/template/.caster.yml", []byte(template), 0600)
+			Expect(err).To(BeNil())
 			resp, err := svc.Interpolate(&interpolate.Request{
 				Directory: "/template",
 				Variables: []models.Variable{

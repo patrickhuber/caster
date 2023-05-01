@@ -2,11 +2,11 @@ package commands
 
 import (
 	"github.com/patrickhuber/caster/internal/global"
-	"github.com/patrickhuber/caster/pkg/abstract/env"
-	"github.com/patrickhuber/caster/pkg/console"
 	"github.com/patrickhuber/caster/pkg/interpolate"
 	"github.com/patrickhuber/caster/pkg/models"
 	"github.com/patrickhuber/go-di"
+	"github.com/patrickhuber/go-xplat/console"
+	"github.com/patrickhuber/go-xplat/env"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -50,7 +50,7 @@ var Interpolate = &cli.Command{
 
 type InterpolateCommand struct {
 	Options     InterpolateOptions
-	Environment env.Env             `inject:""`
+	Environment env.Environment     `inject:""`
 	Service     interpolate.Service `inject:""`
 	Console     console.Console     `inject:""`
 }
