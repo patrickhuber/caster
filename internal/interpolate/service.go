@@ -10,7 +10,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/patrickhuber/caster/pkg/models"
+	"github.com/patrickhuber/caster/internal/models"
 	"github.com/patrickhuber/go-xplat/env"
 	"github.com/patrickhuber/go-xplat/filepath"
 	afs "github.com/patrickhuber/go-xplat/fs"

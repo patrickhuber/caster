@@ -4,8 +4,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/patrickhuber/caster/pkg/interpolate"
-	"github.com/patrickhuber/caster/pkg/models"
+	"github.com/patrickhuber/caster/internal/interpolate"
+	"github.com/patrickhuber/caster/internal/models"
 	"github.com/patrickhuber/go-xplat/env"
 	"github.com/patrickhuber/go-xplat/filepath"
 	afs "github.com/patrickhuber/go-xplat/fs"

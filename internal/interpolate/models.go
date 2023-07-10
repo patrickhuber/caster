@@ -1,6 +1,6 @@
 package interpolate
 
-import "github.com/patrickhuber/caster/pkg/models"
+import "github.com/patrickhuber/caster/internal/models"
 
 // Request is the request object for casting a template
 type Request struct {

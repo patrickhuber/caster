@@ -5,9 +5,9 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/patrickhuber/caster/pkg/cast"
-	"github.com/patrickhuber/caster/pkg/interpolate"
-	"github.com/patrickhuber/caster/pkg/models"
+	"github.com/patrickhuber/caster/internal/cast"
+	"github.com/patrickhuber/caster/internal/interpolate"
+	"github.com/patrickhuber/caster/internal/models"
 	"gopkg.in/yaml.v3"
 
 	"github.com/patrickhuber/go-xplat/env"

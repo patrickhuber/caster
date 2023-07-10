@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/patrickhuber/caster/internal/cast"
 	"github.com/patrickhuber/caster/internal/global"
-	"github.com/patrickhuber/caster/pkg/cast"
-	"github.com/patrickhuber/caster/pkg/models"
+	"github.com/patrickhuber/caster/internal/models"
 	"github.com/patrickhuber/go-di"
 	"github.com/patrickhuber/go-xplat/env"
 	"github.com/urfave/cli/v2"

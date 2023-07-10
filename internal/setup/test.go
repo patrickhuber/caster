@@ -1,8 +1,8 @@
 package setup
 
 import (
-	"github.com/patrickhuber/caster/pkg/cast"
-	"github.com/patrickhuber/caster/pkg/interpolate"
+	"github.com/patrickhuber/caster/internal/cast"
+	"github.com/patrickhuber/caster/internal/interpolate"
 	"github.com/patrickhuber/go-di"
 	"github.com/patrickhuber/go-xplat/console"
 	"github.com/patrickhuber/go-xplat/env"
