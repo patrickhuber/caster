@@ -1,6 +1,6 @@
 # caster
 
-filesystem templating in go
+A file and directory templating cli
 
 # getting started
 
@@ -12,8 +12,7 @@ You can also install caster with `go install`
 
 ```
 git clone https://github.com/patrickhuber/caster
-cd caster/cmd/caster
-go install
+go install -C caster/cmd/caster
 ```
 
 ## creating a template

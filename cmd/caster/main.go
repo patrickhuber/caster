@@ -17,7 +17,9 @@ var version = ""
 func main() {
 	runtime := setup.New()
 	app := &cli.App{
-		Version: version,
+		Name:        "caster",
+		Description: "a file and directory templating cli",
+		Version:     version,
 		Metadata: map[string]interface{}{
 			global.DependencyInjectionContainer: runtime.Container(),
 			global.OSArgs:                       os.Args,
