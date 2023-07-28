@@ -37,7 +37,7 @@ files:
 			err := fs.WriteFile("/template/.caster.yml", []byte(template), 0600)
 			Expect(err).To(BeNil())
 			resp, err := svc.Interpolate(&interpolate.Request{
-				Directory: "/template",
+				Template: "/template",
 			})
 			Expect(err).To(BeNil())
 			Expect(resp).ToNot(BeNil())
@@ -57,7 +57,7 @@ files:
 			err := fs.WriteFile("/template/.caster.yml", []byte(template), 0600)
 			Expect(err).To(BeNil())
 			resp, err := svc.Interpolate(&interpolate.Request{
-				Directory: "/template",
+				Template: "/template",
 				Variables: []models.Variable{
 					{
 						Key:   "key",

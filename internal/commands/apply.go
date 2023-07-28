@@ -13,27 +13,24 @@ import (
 )
 
 const (
-	ApplyFileFlag      = "apply"
-	ApplyDirectoryFlag = "directory"
-	ApplyNameFlag      = "name"
-	ApplyVarFlag       = "var"
-	ApplyVarFileFlag   = "var-file"
+	ApplyTemplateFlag = "template"
+	ApplyNameFlag     = "name"
+	ApplyOutFlag      = "out"
+	ApplyVarFlag      = "var"
+	ApplyVarFileFlag  = "var-file"
 )
 
 var Apply = &cli.Command{
 	Name:        "apply",
 	Description: "applies the specified template to the target directory",
 	Usage:       "Applies the specified template to the target directory",
-	UsageText:   "caster apply (-f <TEMPLATE_FILE> | -d <TEMPLATE_DIRECTORY | -n <NAME>) [<TARGET>]",
+	UsageText:   "caster apply [-t|--template <TEMPLATEDIR|TEMPLATEFILE>] [-n|--name <TEMPLATENAME>] [OUTDIR]",
 	Action:      ApplyAction,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:    ApplyFileFlag,
-			Aliases: []string{"f"},
-		},
-		&cli.StringFlag{
-			Name:    ApplyDirectoryFlag,
-			Aliases: []string{"d"},
+			Name:    ApplyTemplateFlag,
+			Aliases: []string{"t"},
+			Value:   ".caster.yml",
 		},
 		&cli.StringFlag{
 			Name:    ApplyNameFlag,
@@ -56,8 +53,7 @@ type ApplyCommand struct {
 }
 
 type ApplyOptions struct {
-	Directory string
-	File      string
+	Template  string
 	Name      string
 	Target    string
 	Variables []models.Variable
@@ -76,8 +72,7 @@ func (cmd *ApplyCommand) Execute() error {
 
 	// create apply request
 	request := &cast.Request{
-		Directory: cmd.Options.Directory,
-		File:      cmd.Options.File,
+		Template:  cmd.Options.Template,
 		Variables: variables,
 		Target:    cmd.Options.Target,
 	}
@@ -105,8 +100,7 @@ func ApplyAction(ctx *cli.Context) error {
 	}
 
 	cmd.Options = ApplyOptions{
-		Directory: ctx.String(ApplyDirectoryFlag),
-		File:      ctx.String(ApplyFileFlag),
+		Template:  ctx.String(ApplyTemplateFlag),
 		Name:      ctx.String(ApplyNameFlag),
 		Target:    ctx.Args().First(),
 		Variables: append(variables, envVariables...),

@@ -4,8 +4,7 @@ import "github.com/patrickhuber/caster/internal/models"
 
 // Request is the request object for casting a template
 type Request struct {
-	File      string            `yaml:"omitempty"`
-	Directory string            `yaml:"omitempty"`
+	Template  string            `yaml:"omitempty"`
 	Variables []models.Variable `yaml:"omitempty"`
 }
 

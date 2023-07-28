@@ -2,10 +2,9 @@ package commands_test
 
 import (
 	"bytes"
+	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/patrickhuber/caster/internal/commands"
 	"github.com/patrickhuber/caster/internal/global"
 	"github.com/patrickhuber/caster/internal/setup"
@@ -13,163 +12,198 @@ import (
 	"github.com/patrickhuber/go-xplat/console"
 	"github.com/patrickhuber/go-xplat/env"
 	"github.com/patrickhuber/go-xplat/fs"
+	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 )
 
-var _ = Describe("Interpolate", func() {
-	var app *cli.App
-	var container di.Container
-	var con console.Console
-	var f fs.FS
-	var e env.Environment
-	BeforeEach(func() {
-		var err error
-		s := setup.NewTest()
-		container = s.Container()
+type InterpolateTestContext struct {
+	app       *cli.App
+	container di.Container
+	con       console.Console
+	f         fs.FS
+	e         env.Environment
+}
 
-		con, err = di.Resolve[console.Console](container)
-		Expect(err).To(BeNil())
+func TestInterpolate(t *testing.T) {
 
-		f, err = di.Resolve[fs.FS](container)
-		Expect(err).To(BeNil())
-		paths := []string{"/", "/template", "/data"}
-		for _, p := range paths {
-			err = f.Mkdir(p, 0666)
-			Expect(err).To(BeNil())
-		}
+	t.Run("basic", func(t *testing.T) {
+		cx := SetupInterpolateTestContext(t)
+		err := cx.f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n"), 0600)
+		require.NoError(t, err)
 
-		e, err = di.Resolve[env.Environment](container)
-		Expect(err).To(BeNil())
+		args := []string{"caster", "interpolate", "-t", "/template"}
+		cx.app.Metadata[global.OSArgs] = args
 
-		app = &cli.App{
-			Version: "1.0.0",
-			Metadata: map[string]interface{}{
-				global.DependencyInjectionContainer: container,
-			},
-			Commands: []*cli.Command{
-				commands.Interpolate,
-			},
-			Reader:    con.In(),
-			ErrWriter: con.Error(),
-			Writer:    con.Out(),
-		}
+		err = cx.app.Run(args)
+		require.NoError(t, err)
 
+		buf, ok := cx.con.Out().(*bytes.Buffer)
+		require.True(t, ok)
+		require.Equal(t, "files:\n  - name: test.txt\n", buf.String())
 	})
-	It("can run", func() {
-		err := f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n"), 0600)
-		Expect(err).To(BeNil())
-		args := []string{"caster", "interpolate", "-d", "/template"}
-		app.Metadata[global.OSArgs] = args
-
-		err = app.Run(args)
-		Expect(err).To(BeNil())
-
-		buf, ok := con.Out().(*bytes.Buffer)
-		Expect(ok).To(BeTrue())
-		Expect(buf.String()).To(Equal("files:\n  - name: test.txt\n"))
-	})
-	When("env var", func() {
-		It("can run", func() {
-			template := `files:
+	t.Run("env", func(t *testing.T) {
+		template := `files:
   - name: test.txt
     content: {{ .key }}
 `
-			err := f.WriteFile("/template/.caster.yml", []byte(template), 0600)
-			Expect(err).To(BeNil())
-			e.Set("CASTER_VAR_key", "value")
+		cx := SetupInterpolateTestContext(t)
+		err := cx.f.WriteFile("/template/.caster.yml", []byte(template), 0600)
+		require.NoError(t, err)
 
-			args := []string{"caster", "interpolate", "-d", "/template"}
-			app.Metadata[global.OSArgs] = args
+		cx.e.Set("CASTER_VAR_key", "value")
 
-			err = app.Run(args)
-			Expect(err).To(BeNil())
+		args := []string{"caster", "interpolate", "-t", "/template"}
+		cx.app.Metadata[global.OSArgs] = args
 
-			buf, ok := con.Out().(*bytes.Buffer)
-			Expect(ok).To(BeTrue())
-			want := `files:
+		err = cx.app.Run(args)
+		require.NoError(t, err)
+
+		buf, ok := cx.con.Out().(*bytes.Buffer)
+		require.True(t, ok)
+		want := `files:
   - name: test.txt
     content: value
 `
-			have := buf.String()
-			Expect(have).To(Equal(want), cmp.Diff(have, want))
-		})
+		have := buf.String()
+		require.Equal(t, want, have, cmp.Diff(have, want))
 	})
-	When("multiple data file", func() {
-		It("can run", func() {
-			f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.first}}{{.second}}"), 0600)
-			f.WriteFile("/data/1.yml", []byte("first: first"), 0600)
-			f.WriteFile("/data/2.yml", []byte("second: second"), 0600)
+	t.Run("multi_data", func(t *testing.T) {
+		cx := SetupInterpolateTestContext(t)
+		cx.f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.first}}{{.second}}"), 0600)
+		cx.f.WriteFile("/data/1.yml", []byte("first: first"), 0600)
+		cx.f.WriteFile("/data/2.yml", []byte("second: second"), 0600)
 
-			args := []string{"caster", "interpolate", "--var-file", "/data/1.yml", "--var-file", "/data/2.yml", "-d", "/template"}
-			app.Metadata[global.OSArgs] = args
-			err := app.Run(args)
-			Expect(err).To(BeNil())
+		args := []string{"caster", "interpolate", "--var-file", "/data/1.yml", "--var-file", "/data/2.yml", "-t", "/template"}
+		cx.app.Metadata[global.OSArgs] = args
+		err := cx.app.Run(args)
+		require.NoError(t, err)
 
-			buf, ok := con.Out().(*bytes.Buffer)
-			Expect(ok).To(BeTrue())
-			want := `files:
+		buf, ok := cx.con.Out().(*bytes.Buffer)
+		require.True(t, ok)
+		want := `files:
   - name: test.txt
     content: firstsecond
 `
-			have := buf.String()
-			Expect(have).To(Equal(want), cmp.Diff(have, want))
-		})
+		have := buf.String()
+		require.Equal(t, want, have, cmp.Diff(have, want))
 	})
-	When("multiple argument", func() {
-		It("can run", func() {
-			f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.first}}{{.second}}"), 0600)
+	t.Run("multi_arg", func(t *testing.T) {
+		cx := SetupInterpolateTestContext(t)
+		cx.f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.first}}{{.second}}"), 0600)
 
-			args := []string{"caster", "interpolate", "--var", "first=first", "--var", "second=second", "-d", "/template"}
-			app.Metadata[global.OSArgs] = args
-			err := app.Run(args)
-			Expect(err).To(BeNil())
+		args := []string{"caster", "interpolate", "--var", "first=first", "--var", "second=second", "-t", "/template"}
+		cx.app.Metadata[global.OSArgs] = args
+		err := cx.app.Run(args)
+		require.NoError(t, err)
 
-			buf, ok := con.Out().(*bytes.Buffer)
-			Expect(ok).To(BeTrue())
-			want := `files:
+		buf, ok := cx.con.Out().(*bytes.Buffer)
+		require.True(t, ok)
+		want := `files:
   - name: test.txt
     content: firstsecond
 `
-			have := buf.String()
-			Expect(have).To(Equal(want), cmp.Diff(have, want))
-		})
+		have := buf.String()
+		require.Equal(t, want, have, cmp.Diff(have, want))
 	})
-	When("mixed arguments", func() {
-		It("can override with var", func() {
-			f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
-			f.WriteFile("/data/1.yml", []byte("key: first"), 0600)
+	t.Run("mixed_arg", func(t *testing.T) {
+		cx := SetupInterpolateTestContext(t)
+		cx.f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
+		cx.f.WriteFile("/data/1.yml", []byte("key: first"), 0600)
 
-			args := []string{"caster", "interpolate", "--var-file", "/data/1.yml", "--var", "key=second", "-d", "/template"}
-			app.Metadata[global.OSArgs] = args
-			err := app.Run(args)
-			Expect(err).To(BeNil())
+		args := []string{"caster", "interpolate", "--var-file", "/data/1.yml", "--var", "key=second", "-t", "/template"}
+		cx.app.Metadata[global.OSArgs] = args
+		err := cx.app.Run(args)
+		require.NoError(t, err)
 
-			buf, ok := con.Out().(*bytes.Buffer)
-			Expect(ok).To(BeTrue())
-			want := `files:
+		buf, ok := cx.con.Out().(*bytes.Buffer)
+		require.True(t, ok)
+		want := `files:
   - name: test.txt
     content: second
 `
-			have := buf.String()
-			Expect(have).To(Equal(want), cmp.Diff(have, want))
-		})
-		It("can override with var-file", func() {
-			f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
-			f.WriteFile("/data/1.yml", []byte("key: second"), 0600)
+		have := buf.String()
+		require.Equal(t, want, have, cmp.Diff(have, want))
+	})
+	t.Run("override", func(t *testing.T) {
 
-			args := []string{"caster", "interpolate", "--var", "key=first", "--var-file", "/data/1.yml", "-d", "/template"}
-			app.Metadata[global.OSArgs] = args
-			err := app.Run(args)
-			Expect(err).To(BeNil())
+		cx := SetupInterpolateTestContext(t)
+		cx.f.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
+		cx.f.WriteFile("/data/1.yml", []byte("key: second"), 0600)
 
-			buf, ok := con.Out().(*bytes.Buffer)
-			Expect(ok).To(BeTrue())
-			want := `files:
+		args := []string{"caster", "interpolate", "--var", "key=first", "--var-file", "/data/1.yml", "-t", "/template"}
+		cx.app.Metadata[global.OSArgs] = args
+		err := cx.app.Run(args)
+		require.NoError(t, err)
+
+		buf, ok := cx.con.Out().(*bytes.Buffer)
+		require.True(t, ok)
+		want := `files:
   - name: test.txt
     content: second
 `
-			have := buf.String()
-			Expect(have).To(Equal(want), cmp.Diff(have, want))
-		})
+		have := buf.String()
+		require.Equal(t, want, have, cmp.Diff(have, want))
 	})
-})
+
+	t.Run("default", func(t *testing.T) {
+		cx := SetupInterpolateTestContext(t)
+		cx.f.WriteFile("/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
+		cx.f.WriteFile("/data/1.yml", []byte("key: second"), 0600)
+
+		args := []string{"caster", "interpolate", "--var", "key=first", "--var-file", "/data/1.yml"}
+		cx.app.Metadata[global.OSArgs] = args
+		err := cx.app.Run(args)
+		require.NoError(t, err)
+
+		buf, ok := cx.con.Out().(*bytes.Buffer)
+		require.True(t, ok)
+		want := `files:
+  - name: test.txt
+    content: second
+`
+		have := buf.String()
+		require.Equal(t, want, have, cmp.Diff(have, want))
+	})
+}
+
+func SetupInterpolateTestContext(t *testing.T) *InterpolateTestContext {
+	var err error
+	s := setup.NewTest()
+	container := s.Container()
+
+	con, err := di.Resolve[console.Console](container)
+	require.NoError(t, err)
+
+	f, err := di.Resolve[fs.FS](container)
+	require.NoError(t, err)
+
+	paths := []string{"/", "/template", "/data"}
+	for _, p := range paths {
+		err = f.Mkdir(p, 0666)
+		require.NoError(t, err)
+	}
+
+	e, err := di.Resolve[env.Environment](container)
+	require.NoError(t, err)
+
+	app := &cli.App{
+		Version: "1.0.0",
+		Metadata: map[string]interface{}{
+			global.DependencyInjectionContainer: container,
+		},
+		Commands: []*cli.Command{
+			commands.Interpolate,
+		},
+		Reader:    con.In(),
+		ErrWriter: con.Error(),
+		Writer:    con.Out(),
+	}
+
+	return &InterpolateTestContext{
+		app:       app,
+		container: container,
+		con:       con,
+		f:         f,
+		e:         e,
+	}
+}

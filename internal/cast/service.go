@@ -42,8 +42,7 @@ func (s *service) Cast(req *Request) error {
 		})
 	}
 	resp, err := s.inter.Interpolate(&interpolate.Request{
-		File:      req.File,
-		Directory: req.Directory,
+		Template:  req.Template,
 		Variables: variables,
 	})
 
