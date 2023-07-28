@@ -3,6 +3,7 @@ package interpolate
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"regexp"
@@ -136,8 +137,17 @@ func (s *service) readDirRegex(dir string, regex string) ([]fs.DirEntry, error) 
 func (s *service) getCasterFile(req *Request) (string, error) {
 	template := strings.TrimSpace(req.Template)
 
+	// if we have a default this should not occur
+	if len(template) == 0 {
+		return "", fmt.Errorf("template file is missing")
+	}
+
 	// is this a file or directory?
 	info, err := s.fs.Stat(template)
+	if errors.Is(err, fs.ErrNotExist) {
+		return "", fmt.Errorf("file %s does not exist", template)
+	}
+
 	if err != nil {
 		return "", err
 	}

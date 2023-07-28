@@ -28,6 +28,7 @@ var Interpolate = &cli.Command{
 		&cli.StringFlag{
 			Name:    InterpolateTemplateFlag,
 			Aliases: []string{"t"},
+			Value:   ".",
 		},
 		&cli.StringFlag{
 			Name:    InterpolateNameFlag,
