@@ -2,6 +2,7 @@ package setup
 
 import (
 	"github.com/patrickhuber/caster/internal/cast"
+	"github.com/patrickhuber/caster/internal/initialize"
 	"github.com/patrickhuber/caster/internal/interpolate"
 	"github.com/patrickhuber/go-di"
 	"github.com/patrickhuber/go-xplat/console"
@@ -26,6 +27,7 @@ func NewTest() Setup {
 	})
 	container.RegisterConstructor(cast.NewService)
 	container.RegisterConstructor(interpolate.NewService)
+	container.RegisterConstructor(initialize.NewService)
 	container.RegisterConstructor(func() console.Console {
 		return console.NewMemory()
 	})

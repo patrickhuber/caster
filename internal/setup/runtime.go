@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"github.com/patrickhuber/caster/internal/initialize"
 	"github.com/patrickhuber/caster/internal/interpolate"
 	"github.com/patrickhuber/go-xplat/filepath"
 	"github.com/patrickhuber/go-xplat/fs"
@@ -22,6 +23,7 @@ func New() Setup {
 	})
 	container.RegisterConstructor(cast.NewService)
 	container.RegisterConstructor(interpolate.NewService)
+	container.RegisterConstructor(initialize.NewService)
 	container.RegisterConstructor(console.NewOS)
 	return &runtime{
 		container: container,
