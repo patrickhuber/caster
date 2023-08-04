@@ -1,8 +1,11 @@
 package initialize
 
 import (
+	"errors"
+	"io/fs"
+
 	"github.com/patrickhuber/go-xplat/filepath"
-	"github.com/patrickhuber/go-xplat/fs"
+	afs "github.com/patrickhuber/go-xplat/fs"
 )
 
 type Request struct {
@@ -15,7 +18,7 @@ type Service interface {
 	Initialize(req *Request) (*Response, error)
 }
 
-func NewService(fs fs.FS, path *filepath.Processor) Service {
+func NewService(fs afs.FS, path *filepath.Processor) Service {
 	return &service{
 		fs:   fs,
 		path: path,
@@ -23,7 +26,7 @@ func NewService(fs fs.FS, path *filepath.Processor) Service {
 }
 
 type service struct {
-	fs   fs.FS
+	fs   afs.FS
 	path *filepath.Processor
 }
 
@@ -37,11 +40,10 @@ func (s *service) Initialize(req *Request) (*Response, error) {
 
 	// is this a file or directory?
 	stat, err := s.fs.Stat(template)
-	if err != nil {
-		return nil, err
-	}
-	if stat.IsDir() {
+	if err == nil && stat.IsDir() {
 		template = s.path.Join(template, ".caster.yml")
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
 	}
 
 	content := `files:
