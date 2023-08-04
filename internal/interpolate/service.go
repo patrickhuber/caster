@@ -23,7 +23,7 @@ type Service interface {
 }
 
 // NewService creates a new instance of the cast service
-func NewService(fs afs.FS, env env.Environment, path filepath.Processor) Service {
+func NewService(fs afs.FS, env env.Environment, path *filepath.Processor) Service {
 	return &service{
 		fs:   fs,
 		env:  env,
@@ -33,7 +33,7 @@ func NewService(fs afs.FS, env env.Environment, path filepath.Processor) Service
 
 type service struct {
 	fs   afs.FS
-	path filepath.Processor
+	path *filepath.Processor
 	env  env.Environment
 }
 
@@ -142,6 +142,13 @@ func (s *service) getCasterFile(req *Request) (string, error) {
 		return "", fmt.Errorf("template file is missing")
 	}
 
+	// look for relative paths
+	abs, err := s.path.Abs(template)
+	if err != nil {
+		return "", err
+	}
+	template = abs
+
 	// is this a file or directory?
 	info, err := s.fs.Stat(template)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -159,14 +166,14 @@ func (s *service) getCasterFile(req *Request) (string, error) {
 
 	// read the caster file in the directory
 	// if it doesn't exist, return an error saying not found
-	files, err := s.readDirRegex(req.Template, "[.]caster[.](yml|json)")
+	files, err := s.readDirRegex(template, "[.]caster[.](yml|json)")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w : template folder '%s' missing .caster.(yml|json) file", err, template)
 	}
 	if len(files) == 0 {
-		return "", fmt.Errorf("template folder '%s' missing .caster.(yml|json) file", req.Template)
+		return "", fmt.Errorf("template folder '%s' missing .caster.(yml|json) file", template)
 	}
-	return s.path.Join(req.Template, files[0].Name()), nil
+	return s.path.Join(template, files[0].Name()), nil
 }
 
 func (s *service) getCasterFileContent(path string) (string, error) {

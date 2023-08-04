@@ -12,6 +12,7 @@ import (
 	"github.com/patrickhuber/go-xplat/console"
 	"github.com/patrickhuber/go-xplat/env"
 	"github.com/patrickhuber/go-xplat/fs"
+	"github.com/patrickhuber/go-xplat/os"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 )
@@ -147,7 +148,7 @@ func TestInterpolate(t *testing.T) {
 
 	t.Run("default", func(t *testing.T) {
 		cx := SetupInterpolateTestContext(t)
-		cx.f.WriteFile("/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
+		cx.f.WriteFile("/working/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
 		cx.f.WriteFile("/data/1.yml", []byte("key: second"), 0600)
 
 		args := []string{"caster", "interpolate", "--var", "key=first", "--var-file", "/data/1.yml"}
@@ -171,15 +172,21 @@ func SetupInterpolateTestContext(t *testing.T) *InterpolateTestContext {
 	s := setup.NewTest()
 	container := s.Container()
 
+	o, err := di.Resolve[os.OS](container)
+	require.NoError(t, err)
+
+	wd, err := o.WorkingDirectory()
+	require.NoError(t, err)
+
 	con, err := di.Resolve[console.Console](container)
 	require.NoError(t, err)
 
 	f, err := di.Resolve[fs.FS](container)
 	require.NoError(t, err)
 
-	paths := []string{"/", "/template", "/data"}
+	paths := []string{"/", "/template", "/data", wd, o.Home()}
 	for _, p := range paths {
-		err = f.Mkdir(p, 0666)
+		err = f.MkdirAll(p, 0666)
 		require.NoError(t, err)
 	}
 

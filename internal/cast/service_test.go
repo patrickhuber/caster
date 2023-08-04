@@ -13,7 +13,7 @@ import (
 	"github.com/patrickhuber/go-xplat/env"
 	"github.com/patrickhuber/go-xplat/filepath"
 	afs "github.com/patrickhuber/go-xplat/fs"
-	"github.com/patrickhuber/go-xplat/platform"
+	"github.com/patrickhuber/go-xplat/os"
 )
 
 type ServiceTest interface {
@@ -28,13 +28,14 @@ type ServiceTest interface {
 
 type serviceTest struct {
 	fs    afs.FS
-	path  filepath.Processor
+	path  *filepath.Processor
 	env   env.Environment
 	inter interpolate.Service
 }
 
 func NewServiceTest() ServiceTest {
-	path := filepath.NewProcessorWithPlatform(platform.Linux)
+	o := os.NewLinuxMock()
+	path := filepath.NewProcessorWithOS(o)
 	fs := afs.NewMemory(afs.WithProcessor(path))
 	e := env.NewMemory()
 

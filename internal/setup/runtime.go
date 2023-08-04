@@ -16,7 +16,7 @@ func New() Setup {
 	container := di.NewContainer()
 	container.RegisterConstructor(env.NewOS)
 	container.RegisterConstructor(fs.NewOS)
-	container.RegisterConstructor(func() filepath.Processor {
+	container.RegisterConstructor(func() *filepath.Processor {
 		// options cause issues with constructor registration
 		return filepath.NewProcessor()
 	})

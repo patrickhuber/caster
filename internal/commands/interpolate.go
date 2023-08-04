@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	InterpolateTemplateFlag = "interpolate"
+	InterpolateTemplateFlag = "template"
 	InterpolateNameFlag     = "name"
 	InterpolateVarFlag      = "var"
 	InterpolateVarFileFlag  = "var-file"
@@ -20,9 +20,10 @@ const (
 
 var Interpolate = &cli.Command{
 	Name:        "interpolate",
+	Aliases:     []string{"inter"},
 	Description: "interpolates the specified template and outputs the result",
 	Usage:       "interpolates the specified template and outputs the result",
-	UsageText:   "caster apply [-t|--template <TEMPLATEDIR|TEMPLATEFILE>] [-n|--name <TEMPLATENAME>]",
+	UsageText:   "caster interpolate [-t|--template <TEMPLATEDIR|TEMPLATEFILE>] [-n|--name <TEMPLATENAME>]",
 	Action:      InterpolateAction,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
