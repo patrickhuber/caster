@@ -17,6 +17,7 @@ var Initialize = &cli.Command{
 	Description: "initializes the speified directory or file with the default template",
 	Usage:       "initializes the speified directory or file with the default template",
 	UsageText:   "caster init [DIRECTORY|FIILE]",
+	Action:      InitializeAction,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    InitializeTemplateFlag,
@@ -35,7 +36,7 @@ type InitializeOptions struct {
 	Template string
 }
 
-func InitAction(ctx *cli.Context) error {
+func InitializeAction(ctx *cli.Context) error {
 	cmd := &InitializeCommand{}
 	resolver := ctx.App.Metadata[global.DependencyInjectionContainer].(di.Resolver)
 	err := di.Inject(resolver, cmd)
