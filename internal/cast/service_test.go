@@ -13,7 +13,7 @@ import (
 	"github.com/patrickhuber/go-xplat/env"
 	"github.com/patrickhuber/go-xplat/filepath"
 	afs "github.com/patrickhuber/go-xplat/fs"
-	"github.com/patrickhuber/go-xplat/platform"
+	"github.com/patrickhuber/go-xplat/os"
 )
 
 type ServiceTest interface {
@@ -28,13 +28,14 @@ type ServiceTest interface {
 
 type serviceTest struct {
 	fs    afs.FS
-	path  filepath.Processor
+	path  *filepath.Processor
 	env   env.Environment
 	inter interpolate.Service
 }
 
 func NewServiceTest() ServiceTest {
-	path := filepath.NewProcessorWithPlatform(platform.Linux)
+	o := os.NewLinuxMock()
+	path := filepath.NewProcessorWithOS(o)
 	fs := afs.NewMemory(afs.WithProcessor(path))
 	e := env.NewMemory()
 
@@ -57,20 +58,33 @@ func (t *serviceTest) SetupString(content string, request *cast.Request) {
 }
 
 func (t *serviceTest) SetupBytes(content []byte, request *cast.Request) {
-	sourceFile := request.File
-	if len(strings.TrimSpace(sourceFile)) == 0 {
-		sourceFile = t.path.Join(request.Directory, ".caster.yml")
+	// a template is either a path to a file or directory
+	// we need to take the path and determine its type and generate the appropriate
+	// test file system
+	template := request.Template
+
+	// if the template is completely empty, use a default path
+	if len(strings.TrimSpace(template)) == 0 {
+		template = "/template"
 	}
+
+	// a file will have an extension
+	isFile := len(strings.TrimSpace(t.path.Ext(template))) > 0
+	if !isFile {
+		// this is a directory so we need to append the default file to the directory
+		template = t.path.Join(template, ".caster.yml")
+	}
+
 	err := t.fs.Mkdir("/", 0600)
 	Expect(err).To(BeNil())
 
 	err = t.fs.Mkdir("/template", 0600)
 	Expect(err).To(BeNil())
 
-	err = t.fs.WriteFile(sourceFile, content, 0600)
+	err = t.fs.WriteFile(template, content, 0600)
 	Expect(err).To(BeNil())
 
-	source := t.path.Dir(sourceFile)
+	source := t.path.Dir(template)
 	sourceInfo, err := t.fs.Stat(source)
 	Expect(err).To(BeNil())
 	Expect(sourceInfo.IsDir()).To(BeTrue())
@@ -127,8 +141,8 @@ var _ = Describe("Service", func() {
 				}
 				t := NewServiceTest()
 				t.Setup(template, &cast.Request{
-					File:   "/template/custom.yml",
-					Target: "/output",
+					Template: "/template/custom.yml",
+					Target:   "/output",
 				})
 
 				t.AssertExists("/output/test.yml")
@@ -158,8 +172,8 @@ var _ = Describe("Service", func() {
 			}
 			t := NewServiceTest()
 			t.Setup(template, &cast.Request{
-				Directory: "/template",
-				Target:    "/output"})
+				Template: "/template",
+				Target:   "/output"})
 			t.AssertExists("/output/test.yml")
 			t.AssertContents("/output/test.yml", "test: test")
 			t.AssertExists("/output/sub")
@@ -172,7 +186,7 @@ files:
   content: "hello: world"`
 
 			t := NewServiceTest()
-			t.SetupString(template, &cast.Request{Directory: "/template", Target: "/output"})
+			t.SetupString(template, &cast.Request{Template: "/template", Target: "/output"})
 			t.AssertExists("/output")
 			t.AssertExists("/output/helloworld.yml")
 			t.AssertContents("/output/helloworld.yml", "hello: world")
@@ -186,7 +200,7 @@ folders:
     content: "one: 1"`
 
 			t := NewServiceTest()
-			t.SetupString(template, &cast.Request{Directory: "/template", Target: "/output"})
+			t.SetupString(template, &cast.Request{Template: "/template", Target: "/output"})
 			t.AssertExists("/output/hello")
 			t.AssertExists("/output/hello/1.yml")
 			t.AssertContents("/output/hello/1.yml", "one: 1")
@@ -201,7 +215,7 @@ files:
 			err := t.FileSystem().WriteFile("/template/test.txt", []byte("test"), 0644)
 			Expect(err).To(BeNil())
 
-			t.SetupString(template, &cast.Request{Directory: "/template", Target: "/output"})
+			t.SetupString(template, &cast.Request{Template: "/template", Target: "/output"})
 			t.AssertExists("/output/test")
 			t.AssertContents("/output/test", "test")
 		})
@@ -216,8 +230,8 @@ files:
 			Expect(err).To(BeNil())
 
 			t.SetupString(template, &cast.Request{
-				Directory: "/template",
-				Target:    "/output",
+				Template: "/template",
+				Target:   "/output",
 				Variables: []models.Variable{
 					{Key: "key", Value: "value"},
 				},
@@ -236,8 +250,8 @@ files:
 			Expect(err).To(BeNil())
 
 			t.SetupString(template, &cast.Request{
-				Directory: "/template",
-				Target:    "/output",
+				Template: "/template",
+				Target:   "/output",
 				Variables: []models.Variable{
 					{Key: "key", Value: "value"},
 				},
@@ -259,8 +273,8 @@ files:
 			Expect(err).To(BeNil())
 
 			t.SetupString(template, &cast.Request{
-				Directory: "/template",
-				Target:    "/output",
+				Template: "/template",
+				Target:   "/output",
 				Variables: []models.Variable{
 					{
 						File: "/data.yml",
@@ -277,8 +291,8 @@ files:
   content: {{ .variable }}`
 			t := NewServiceTest()
 			t.SetupString(template, &cast.Request{
-				Directory: "/template",
-				Target:    "/output",
+				Template: "/template",
+				Target:   "/output",
 				Variables: []models.Variable{
 					{
 						Key:   "variable",
@@ -297,8 +311,8 @@ files:
 			t := NewServiceTest()
 			t.Environment().Set("CASTER_VAR_variable", "test")
 			t.SetupString(template, &cast.Request{
-				Directory: "/template",
-				Target:    "/output",
+				Template: "/template",
+				Target:   "/output",
 				Variables: []models.Variable{
 					{
 						Env: "CASTER_VAR_variable",

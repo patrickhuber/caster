@@ -3,6 +3,7 @@ package interpolate
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"regexp"
@@ -22,7 +23,7 @@ type Service interface {
 }
 
 // NewService creates a new instance of the cast service
-func NewService(fs afs.FS, env env.Environment, path filepath.Processor) Service {
+func NewService(fs afs.FS, env env.Environment, path *filepath.Processor) Service {
 	return &service{
 		fs:   fs,
 		env:  env,
@@ -32,22 +33,11 @@ func NewService(fs afs.FS, env env.Environment, path filepath.Processor) Service
 
 type service struct {
 	fs   afs.FS
-	path filepath.Processor
+	path *filepath.Processor
 	env  env.Environment
 }
 
 func (s *service) Interpolate(req *Request) (*Response, error) {
-
-	fileIsSpecified := len(strings.TrimSpace(req.File)) != 0
-	directoryIsSpecified := len(strings.TrimSpace(req.Directory)) != 0
-
-	if !fileIsSpecified && !directoryIsSpecified {
-		return nil, fmt.Errorf("either source file or source directory must be specified")
-	}
-
-	if fileIsSpecified && directoryIsSpecified {
-		return nil, fmt.Errorf("source file and source directory are mutually exclusive. Specify one but not both")
-	}
 
 	path, err := s.getCasterFile(req)
 	if err != nil {
@@ -145,23 +135,45 @@ func (s *service) readDirRegex(dir string, regex string) ([]fs.DirEntry, error) 
 }
 
 func (s *service) getCasterFile(req *Request) (string, error) {
-	file := strings.TrimSpace(req.File)
-	if len(file) > 0 {
-		return file, nil
+	template := strings.TrimSpace(req.Template)
+
+	// if we have a default this should not occur
+	if len(template) == 0 {
+		return "", fmt.Errorf("template file is missing")
+	}
+
+	// look for relative paths
+	abs, err := s.path.Abs(template)
+	if err != nil {
+		return "", err
+	}
+	template = abs
+
+	// is this a file or directory?
+	info, err := s.fs.Stat(template)
+	if errors.Is(err, fs.ErrNotExist) {
+		return "", fmt.Errorf("file %s does not exist", template)
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	// if this is a file, return the file path
+	if !info.IsDir() {
+		return template, nil
 	}
 
 	// read the caster file in the directory
 	// if it doesn't exist, return an error saying not found
-	files, err := s.readDirRegex(req.Directory, "[.]caster[.](yml|json)")
+	files, err := s.readDirRegex(template, "[.]caster[.](yml|json)")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w : template folder '%s' missing .caster.(yml|json) file", err, template)
 	}
 	if len(files) == 0 {
-		return "", fmt.Errorf("template folder '%s' missing .caster.(yml|json) file", req.Directory)
+		return "", fmt.Errorf("template folder '%s' missing .caster.(yml|json) file", template)
 	}
-
-	file = s.path.Join(req.Directory, files[0].Name())
-	return file, nil
+	return s.path.Join(template, files[0].Name()), nil
 }
 
 func (s *service) getCasterFileContent(path string) (string, error) {

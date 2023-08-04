@@ -12,27 +12,24 @@ import (
 )
 
 const (
-	InterpolateFileFlag      = "interpolate"
-	InterpolateDirectoryFlag = "directory"
-	InterpolateNameFlag      = "name"
-	InterpolateVarFlag       = "var"
-	InterpolateVarFileFlag   = "var-file"
+	InterpolateTemplateFlag = "template"
+	InterpolateNameFlag     = "name"
+	InterpolateVarFlag      = "var"
+	InterpolateVarFileFlag  = "var-file"
 )
 
 var Interpolate = &cli.Command{
 	Name:        "interpolate",
+	Aliases:     []string{"inter"},
 	Description: "interpolates the specified template and outputs the result",
 	Usage:       "interpolates the specified template and outputs the result",
-	UsageText:   "caster interpolate (-f <TEMPLATE_FILE> | -d <TEMPLATE_DIRECTORY | -n <NAME>) [<TARGET>]",
+	UsageText:   "caster interpolate [-t|--template <TEMPLATEDIR|TEMPLATEFILE>] [-n|--name <TEMPLATENAME>]",
 	Action:      InterpolateAction,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:    InterpolateFileFlag,
-			Aliases: []string{"f"},
-		},
-		&cli.StringFlag{
-			Name:    InterpolateDirectoryFlag,
-			Aliases: []string{"d"},
+			Name:    InterpolateTemplateFlag,
+			Aliases: []string{"t"},
+			Value:   ".",
 		},
 		&cli.StringFlag{
 			Name:    InterpolateNameFlag,
@@ -56,8 +53,7 @@ type InterpolateCommand struct {
 }
 
 type InterpolateOptions struct {
-	Directory string
-	File      string
+	Template  string
 	Name      string
 	Variables []models.Variable
 }
@@ -82,9 +78,8 @@ func InterpolateAction(ctx *cli.Context) error {
 	}
 
 	cmd.Options = InterpolateOptions{
-		Directory: ctx.String(ApplyDirectoryFlag),
-		File:      ctx.String(ApplyFileFlag),
-		Name:      ctx.String(ApplyNameFlag),
+		Template:  ctx.String(InterpolateTemplateFlag),
+		Name:      ctx.String(InterpolateNameFlag),
 		Variables: append(variables, envVariables...),
 	}
 
@@ -104,8 +99,7 @@ func (cmd *InterpolateCommand) Execute() error {
 
 	// create apply request
 	request := &interpolate.Request{
-		Directory: cmd.Options.Directory,
-		File:      cmd.Options.File,
+		Template:  cmd.Options.Template,
 		Variables: variables,
 	}
 	resp, err := cmd.Service.Interpolate(request)

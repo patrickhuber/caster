@@ -17,12 +17,12 @@ type Service interface {
 
 type service struct {
 	fs    afs.FS
-	path  filepath.Processor
+	path  *filepath.Processor
 	inter interpolate.Service
 }
 
 // NewService creates a new instance of the cast service
-func NewService(fs afs.FS, inter interpolate.Service, path filepath.Processor) Service {
+func NewService(fs afs.FS, inter interpolate.Service, path *filepath.Processor) Service {
 	return &service{
 		fs:    fs,
 		inter: inter,
@@ -42,8 +42,7 @@ func (s *service) Cast(req *Request) error {
 		})
 	}
 	resp, err := s.inter.Interpolate(&interpolate.Request{
-		File:      req.File,
-		Directory: req.Directory,
+		Template:  req.Template,
 		Variables: variables,
 	})
 
