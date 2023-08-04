@@ -146,7 +146,7 @@ files:
 - name: test
   content: {{ templatefile "./test.txt" . }}`,
 			[]file{
-				{"/output/test", "value", true},
+				{"/output/test", "value", false},
 			},
 			&cast.Request{
 				Template: "/template",
@@ -164,7 +164,7 @@ files:
   content: |
     {{- templatefile "./test.txt" . | nindent 4 }}`,
 			[]file{
-				{"/output/test", "value\nvalue", true},
+				{"/output/test", "value\nvalue", false},
 			},
 			&cast.Request{
 				Template: "/template",
@@ -182,7 +182,7 @@ files:
 - name: test.yml
   content: {{ .variable }}`,
 			[]file{
-				{"/output/test.yml", "test", true},
+				{"/output/test.yml", "test", false},
 			},
 			&cast.Request{
 				Template: "/template",
