@@ -1,14 +1,18 @@
 package cast
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/patrickhuber/caster/internal/interpolate"
 	"github.com/patrickhuber/caster/internal/models"
 	"github.com/patrickhuber/go-xplat/filepath"
 	afs "github.com/patrickhuber/go-xplat/fs"
 )
+
+// Request is the request object for casting a template
+type Request struct {
+	Template  string
+	Target    string
+	Variables []models.Variable
+}
 
 // Service handles casting of a template
 type Service interface {
@@ -50,10 +54,15 @@ func (s *service) Cast(req *Request) error {
 		return err
 	}
 
-	targetIsSpecified := len(strings.TrimSpace(req.Target)) != 0
+	// if no target directory specified, use the local directory
+	if len(req.Target) == 0 {
+		req.Target = "."
+	}
 
-	if !targetIsSpecified {
-		return fmt.Errorf("target must be specified")
+	// resolve relative paths
+	req.Target, err = s.path.Abs(req.Target)
+	if err != nil {
+		return err
 	}
 
 	source := s.path.Dir(resp.SourceFile)

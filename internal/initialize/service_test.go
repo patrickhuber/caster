@@ -7,11 +7,12 @@ import (
 	"github.com/patrickhuber/go-xplat/filepath"
 	"github.com/patrickhuber/go-xplat/fs"
 	"github.com/patrickhuber/go-xplat/os"
+	"github.com/patrickhuber/go-xplat/platform"
 	"github.com/stretchr/testify/require"
 )
 
 func TestService(t *testing.T) {
-	o := os.NewLinuxMock()
+	o := os.NewMock(os.WithPlatform(platform.Linux))
 	path := filepath.NewProcessorWithOS(o)
 	fs := fs.NewMemory(fs.WithProcessor(path))
 

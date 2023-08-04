@@ -56,6 +56,10 @@ github.com/patrickhuber/go-xplat v0.2.14 h1:RR3C9YbJ02XeS6CXrqRiSUor+W2UxOENnHr+
 github.com/patrickhuber/go-xplat v0.2.14/go.mod h1:ZveaAmQiWcZO0nWACUrbylAF+BbGwEXdVqM3ZoEOxA4=
 github.com/patrickhuber/go-xplat v0.2.15 h1:qEqPqjmLp0yqHFCWqE+s41ni55JKs0DhHbK3Mt6xZFo=
 github.com/patrickhuber/go-xplat v0.2.15/go.mod h1:ZveaAmQiWcZO0nWACUrbylAF+BbGwEXdVqM3ZoEOxA4=
+github.com/patrickhuber/go-xplat v0.2.16 h1:Km8ErsoTq3lbC5Gm65JxYW/sl290jul1+4fLuPp8QeE=
+github.com/patrickhuber/go-xplat v0.2.16/go.mod h1:ZveaAmQiWcZO0nWACUrbylAF+BbGwEXdVqM3ZoEOxA4=
+github.com/patrickhuber/go-xplat v0.3.0 h1:Q7lFw5HqkljVX4+V4QdyI9T4MfoDcx0ZVF+qhKP4fpM=
+github.com/patrickhuber/go-xplat v0.3.0/go.mod h1:ZveaAmQiWcZO0nWACUrbylAF+BbGwEXdVqM3ZoEOxA4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBOAvL+k=

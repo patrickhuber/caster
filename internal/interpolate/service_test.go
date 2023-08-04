@@ -11,6 +11,7 @@ import (
 	"github.com/patrickhuber/go-xplat/filepath"
 	afs "github.com/patrickhuber/go-xplat/fs"
 	"github.com/patrickhuber/go-xplat/os"
+	"github.com/patrickhuber/go-xplat/platform"
 )
 
 type ServiceTestContext struct {
@@ -74,7 +75,7 @@ files:
 }
 
 func CreateServiceTestContext(t *testing.T) *ServiceTestContext {
-	o := os.NewLinuxMock()
+	o := os.NewMock(os.WithPlatform(platform.Linux))
 	path := filepath.NewProcessorWithOS(o)
 	fs := afs.NewMemory(afs.WithProcessor(path))
 	require.NoError(t, fs.Mkdir("/", 0600))

@@ -10,13 +10,14 @@ import (
 	"github.com/patrickhuber/go-xplat/filepath"
 	"github.com/patrickhuber/go-xplat/fs"
 	"github.com/patrickhuber/go-xplat/os"
+	"github.com/patrickhuber/go-xplat/platform"
 )
 
 func NewTest() Setup {
 	container := di.NewContainer()
 	container.RegisterConstructor(env.NewMemory)
 	container.RegisterConstructor(func() os.OS {
-		return os.NewLinuxMock()
+		return os.NewMock(os.WithPlatform(platform.Linux))
 	})
 	container.RegisterConstructor(func(processor *filepath.Processor) fs.FS {
 		// options cause issues with constructor registration
