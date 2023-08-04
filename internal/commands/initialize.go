@@ -43,6 +43,9 @@ func InitializeAction(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	cmd.Options = InitializeOptions{
+		Template: ctx.String(InitializeTemplateFlag),
+	}
 	return cmd.Execute()
 }
 
