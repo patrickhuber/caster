@@ -18,4 +18,4 @@ RUN openssl s_client -showcerts -connect proxy.golang.org:443 </dev/null 2>/dev/
 # Update certificates
 RUN update-ca-certificates
 
-COPY --from=build /go/src/dist/caster /tmp/caster
+COPY --from=build /go/src/dist/caster /usr/local/bin/caster
