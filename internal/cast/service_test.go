@@ -77,7 +77,7 @@ func TestService(t *testing.T) {
 		template string
 		files    []file
 		request  *cast.Request
-		stage    []file
+		hostFunc func(*host.Host) error
 	}
 	tests := []test{
 		{
@@ -96,7 +96,7 @@ folders:
 			}, &cast.Request{
 				Template: "/template/custom.yml",
 				Target:   "/output",
-			}, []file{},
+			}, nil,
 		},
 		{
 			"replaces_file_names",
@@ -109,7 +109,7 @@ files:
 				{"/output/helloworld.yml", "hello: world", false},
 			},
 			&cast.Request{Template: "/template", Target: "/output"},
-			[]file{},
+			nil,
 		},
 		{
 			"replaces_folder_names",
@@ -124,7 +124,7 @@ folders:
 				{"/output/hello/1.yml", "one: 1", false},
 			},
 			&cast.Request{Template: "/template", Target: "/output"},
-			[]file{},
+			nil,
 		},
 		{
 			"ref",
@@ -133,11 +133,12 @@ files:
 - name: test
   ref: test.txt`,
 			[]file{
-				{"/output/hello", "", true},
-				{"/output/hello/1.yml", "one: 1", false},
+				{"/output/test", "test", false},
 			},
 			&cast.Request{Template: "/template", Target: "/output"},
-			[]file{{"/template/test.txt", "test", false}},
+			func(h *host.Host) error {
+				return h.FS.WriteFile("/template/test.txt", []byte("test"), 0666)
+			},
 		},
 		{
 			"content",
@@ -155,7 +156,9 @@ files:
 					{Key: "key", Value: "value"},
 				},
 			},
-			[]file{{"/template/test.txt", "{{ .key }}", false}},
+			func(h *host.Host) error {
+				return h.FS.WriteFile("/template/test.txt", []byte("{{ .key }}"), 0666)
+			},
 		},
 		{
 			"multi",
@@ -173,7 +176,9 @@ files:
 					{Key: "key", Value: "value"},
 				},
 			},
-			[]file{{"/template/test.txt", "{{ .key }}", false}},
+			func(h *host.Host) error {
+				return h.FS.WriteFile("/template/test.txt", []byte("{{ .key }}\n{{ .key }}"), 0666)
+			},
 		},
 		{
 			"varfile",
@@ -188,13 +193,15 @@ files:
 				Template: "/template",
 				Target:   "/output",
 				Variables: []models.Variable{
-					{Key: "key", Value: "value"},
+					{File: "/data.yml"},
 				},
 			},
-			[]file{{"/data.yml", "variable: test", false}},
+			func(h *host.Host) error {
+				return h.FS.WriteFile("/data.yml", []byte("variable: test"), 0666)
+			},
 		},
 		{
-			"varfile",
+			"variable",
 			`---
 files:
 - name: test.yml
@@ -209,7 +216,29 @@ files:
 					{Key: "variable", Value: "test"},
 				},
 			},
-			[]file{},
+			nil,
+		},
+		{
+			"env",
+			`---
+files:
+- name: test.yml
+  content: {{ .variable }}`,
+			[]file{
+				{"/output/test.yml", "test", true},
+			},
+			&cast.Request{
+				Template: "/template",
+				Target:   "/output",
+				Variables: []models.Variable{
+					{
+						Env: "CASTER_VAR_variable",
+					},
+				},
+			},
+			func(h *host.Host) error {
+				return h.Env.Set("CASTER_VAR_variable", "test")
+			},
 		},
 	}
 	for _, test := range tests {
@@ -217,9 +246,8 @@ files:
 			h := host.NewTest(platform.Linux, arch.AMD64)
 			h.OS.ChangeDirectory("/")
 			svc := interpolate.NewService(h.FS, h.Env, h.Path)
-			for _, file := range test.stage {
-				err := h.FS.WriteFile(file.path, []byte(file.content), 0666)
-				require.NoError(t, err)
+			if test.hostFunc != nil {
+				require.NoError(t, test.hostFunc(h))
 			}
 			Setup(t, h, []byte(test.template), svc, test.request)
 			for _, file := range test.files {
