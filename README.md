@@ -10,10 +10,19 @@ You can either place caster in a system path or add the location to your system 
 
 You can also install caster with `go install`
 
-```
+```bash
 git clone https://github.com/patrickhuber/caster
 go install -C caster/cmd/caster
 ```
+
+Once installed, you can run the hello world example by typing 
+
+```bash
+caster init
+caster apply
+```
+
+This creates a .caster.yml file in the current directory. The apply command will run the template in the current directory.
 
 ## creating a template
 
