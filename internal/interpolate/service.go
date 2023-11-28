@@ -106,10 +106,12 @@ func (s *service) createDataMap(variables []models.Variable) (map[string]any, er
 		}
 	}
 	data := map[string]any{}
-	for k, v := range args {
+
+	for k, v := range env {
 		data[k] = v
 	}
-	for k, v := range env {
+
+	for k, v := range args {
 		data[k] = v
 	}
 	return data, nil

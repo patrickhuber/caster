@@ -130,6 +130,35 @@ func TestInterpolate(t *testing.T) {
 		require.Equal(t, want, have, cmp.Diff(have, want))
 	})
 
+	t.Run("var overrides env", func(t *testing.T) {
+		// a variable defined in the env should be overridden by a command line arg or var file
+		cx := SetupTestContext(t)
+
+		err := cx.fs.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
+		require.NoError(t, err)
+
+		err = cx.fs.WriteFile("/data/1.yml", []byte("key: third"), 0600)
+		require.NoError(t, err)
+
+		args := []string{"caster", "interpolate", "--var", "key=second", "--var-file", "/data/1.yml", "-t", "/template"}
+		cx.app.Metadata[global.OSArgs] = args
+
+		err = cx.env.Set("CASTER_VAR_key", "first")
+		require.NoError(t, err)
+
+		err = cx.app.Run(args)
+		require.NoError(t, err)
+
+		buf, ok := cx.console.Out().(*bytes.Buffer)
+		require.True(t, ok)
+		want := `files:
+  - name: test.txt
+    content: third
+`
+		have := buf.String()
+		require.Equal(t, want, have, cmp.Diff(have, want))
+	})
+
 	t.Run("default", func(t *testing.T) {
 		cx := SetupTestContext(t)
 		cx.fs.WriteFile("/working/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.key}}"), 0600)
