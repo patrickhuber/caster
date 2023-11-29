@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/patrickhuber/caster/internal/global"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +16,6 @@ func TestInterpolate(t *testing.T) {
 		require.NoError(t, err)
 
 		args := []string{"caster", "interpolate", "-t", "/template"}
-		cx.app.Metadata[global.OSArgs] = args
 
 		err = cx.app.Run(args)
 		require.NoError(t, err)
@@ -38,7 +36,6 @@ func TestInterpolate(t *testing.T) {
 		cx.env.Set("CASTER_VAR_key", "value")
 
 		args := []string{"caster", "interpolate", "-t", "/template"}
-		cx.app.Metadata[global.OSArgs] = args
 
 		err = cx.app.Run(args)
 		require.NoError(t, err)
@@ -59,7 +56,7 @@ func TestInterpolate(t *testing.T) {
 		cx.fs.WriteFile("/data/2.yml", []byte("second: second"), 0600)
 
 		args := []string{"caster", "interpolate", "--var-file", "/data/1.yml", "--var-file", "/data/2.yml", "-t", "/template"}
-		cx.app.Metadata[global.OSArgs] = args
+
 		err := cx.app.Run(args)
 		require.NoError(t, err)
 
@@ -77,7 +74,7 @@ func TestInterpolate(t *testing.T) {
 		cx.fs.WriteFile("/template/.caster.yml", []byte("files:\n- name: test.txt\n  content: {{.first}}{{.second}}"), 0600)
 
 		args := []string{"caster", "interpolate", "--var", "first=first", "--var", "second=second", "-t", "/template"}
-		cx.app.Metadata[global.OSArgs] = args
+
 		err := cx.app.Run(args)
 		require.NoError(t, err)
 
@@ -96,7 +93,7 @@ func TestInterpolate(t *testing.T) {
 		cx.fs.WriteFile("/data/1.yml", []byte("key: first"), 0600)
 
 		args := []string{"caster", "interpolate", "--var-file", "/data/1.yml", "--var", "key=second", "-t", "/template"}
-		cx.app.Metadata[global.OSArgs] = args
+
 		err := cx.app.Run(args)
 		require.NoError(t, err)
 
@@ -116,7 +113,7 @@ func TestInterpolate(t *testing.T) {
 		cx.fs.WriteFile("/data/1.yml", []byte("key: second"), 0600)
 
 		args := []string{"caster", "interpolate", "--var", "key=first", "--var-file", "/data/1.yml", "-t", "/template"}
-		cx.app.Metadata[global.OSArgs] = args
+
 		err := cx.app.Run(args)
 		require.NoError(t, err)
 
@@ -141,7 +138,6 @@ func TestInterpolate(t *testing.T) {
 		require.NoError(t, err)
 
 		args := []string{"caster", "interpolate", "--var", "key=second", "--var-file", "/data/1.yml", "-t", "/template"}
-		cx.app.Metadata[global.OSArgs] = args
 
 		err = cx.env.Set("CASTER_VAR_key", "first")
 		require.NoError(t, err)
@@ -165,7 +161,6 @@ func TestInterpolate(t *testing.T) {
 		cx.fs.WriteFile("/data/1.yml", []byte("key: second"), 0600)
 
 		args := []string{"caster", "interpolate", "--var", "key=first", "--var-file", "/data/1.yml"}
-		cx.app.Metadata[global.OSArgs] = args
 		err := cx.app.Run(args)
 		require.NoError(t, err)
 

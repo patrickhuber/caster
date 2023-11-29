@@ -242,7 +242,6 @@ func (s *service) deserializeYamlCasterFile(rendered []byte) (*models.Caster, er
 }
 
 func (s *service) deserializeJsonCasterFile(rendered []byte) (*models.Caster, error) {
-
 	var caster models.Caster
 	err := json.Unmarshal(rendered, &caster)
 	return &caster, err

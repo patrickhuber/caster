@@ -3,7 +3,6 @@ package commands_test
 import (
 	"testing"
 
-	"github.com/patrickhuber/caster/internal/global"
 	"github.com/stretchr/testify/require"
 )
 
@@ -12,7 +11,6 @@ func TestInitialize(t *testing.T) {
 		cx := SetupTestContext(t)
 
 		args := []string{"caster", "init"}
-		cx.app.Metadata[global.OSArgs] = args
 
 		err := cx.app.Run(args)
 		require.NoError(t, err)
@@ -29,7 +27,6 @@ func TestInitialize(t *testing.T) {
 		cx := SetupTestContext(t)
 
 		args := []string{"caster", "init", "-t", "/template"}
-		cx.app.Metadata[global.OSArgs] = args
 
 		err := cx.app.Run(args)
 		require.NoError(t, err)
@@ -43,7 +40,6 @@ func TestInitialize(t *testing.T) {
 		cx := SetupTestContext(t)
 
 		args := []string{"caster", "init", "-t", "/template/test.yml"}
-		cx.app.Metadata[global.OSArgs] = args
 
 		err := cx.app.Run(args)
 		require.NoError(t, err)

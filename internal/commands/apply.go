@@ -8,6 +8,7 @@ import (
 	"github.com/patrickhuber/caster/internal/global"
 	"github.com/patrickhuber/caster/internal/models"
 	"github.com/patrickhuber/go-di"
+	"github.com/patrickhuber/go-xplat/console"
 	"github.com/patrickhuber/go-xplat/env"
 	"github.com/urfave/cli/v2"
 )
@@ -50,6 +51,7 @@ type ApplyCommand struct {
 	Options     ApplyOptions
 	Environment env.Environment `inject:""`
 	Service     cast.Service    `inject:""`
+	Console     console.Console `inject:""`
 }
 
 type ApplyOptions struct {
@@ -60,15 +62,10 @@ type ApplyOptions struct {
 }
 
 func (cmd *ApplyCommand) Execute() error {
-	variables := []models.Variable{}
-	for _, v := range cmd.Options.Variables {
-		variables = append(variables, models.Variable{
-			File:  v.File,
-			Key:   v.Key,
-			Value: v.Value,
-			Env:   v.Env,
-		})
-	}
+	var variables []models.Variable
+
+	// clone the variable slice
+	variables = append(variables, cmd.Options.Variables...)
 
 	// create apply request
 	request := &cast.Request{
@@ -81,7 +78,6 @@ func (cmd *ApplyCommand) Execute() error {
 }
 
 func ApplyAction(ctx *cli.Context) error {
-
 	cmd := &ApplyCommand{}
 	resolver := ctx.App.Metadata[global.DependencyInjectionContainer].(di.Resolver)
 	err := di.Inject(resolver, cmd)
@@ -113,7 +109,7 @@ func getFlagVariables(ctx *cli.Context) ([]models.Variable, error) {
 	variables := []models.Variable{}
 
 	names := []string{}
-	args, _ := ctx.App.Metadata[global.OSArgs].([]string)
+	args := ctx.Args().Slice()
 	for _, a := range args {
 		if strings.Contains(a, "-"+ApplyVarFileFlag) {
 			names = append(names, ApplyVarFileFlag)
